@@ -13,20 +13,22 @@ import { requirePage } from "@/server/auth/guard";
 import { listSales } from "@/server/services/sales";
 
 const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", PROMPTPAY: "PromptPay QR" };
-const STATUS_LABEL: Record<string, string> = { COMPLETED: "สำเร็จ", PARTIALLY_RETURNED: "คืนบางส่วน", FULLY_RETURNED: "คืนทั้งบิล", PAID_NEEDS_REVIEW: "ต้องตรวจสอบ" };
+const STATUS_LABEL: Record<string, string> = { PENDING_PAYMENT: "รอชำระเงิน", CANCELLED: "ยกเลิก", COMPLETED: "สำเร็จ", PARTIALLY_RETURNED: "คืนบางส่วน", FULLY_RETURNED: "คืนทั้งบิล", PAID_NEEDS_REVIEW: "จ่ายแล้ว — ต้องตรวจสอบ" };
 
-export default async function SalesPage({ searchParams }: { searchParams: Promise<{ q?: string; date?: string; page?: string }> }) {
+export default async function SalesPage({ searchParams }: { searchParams: Promise<{ q?: string; date?: string; page?: string; view?: string }> }) {
   const user = await requirePage(["ADMIN", "CASHIER"]);
   const sp = await searchParams;
   const q = sp.q?.trim().slice(0, 50) || undefined;
   const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(sp.date).data;
   const page = z.coerce.number().int().min(1).catch(1).parse(sp.page);
-  const data = await listSales({ q, date, page }, user);
+  const view = z.enum(["done", "review", "unfinished"]).catch("done").parse(sp.view);
+  const data = await listSales({ q, date, page, view }, user);
 
   const href = (p: number) => {
     const u = new URLSearchParams();
     if (q) u.set("q", q);
     if (date) u.set("date", date);
+    if (view !== "done") u.set("view", view);
     if (p > 1) u.set("page", String(p));
     const s = u.toString();
     return `/sales${s ? `?${s}` : ""}`;
@@ -38,31 +40,37 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
       <form className="mb-4 flex flex-wrap items-center gap-2" role="search">
         <Input name="q" defaultValue={q ?? ""} placeholder="ค้นหาเลขที่ใบเสร็จ" aria-label="ค้นหาเลขที่ใบเสร็จ" className="w-60" />
         <Input name="date" type="date" defaultValue={date ?? ""} aria-label="วันที่" className="w-44" />
+        <select name="view" defaultValue={view} aria-label="สถานะบิล" className="h-8 rounded-lg border border-input bg-card px-2.5 text-sm">
+          <option value="done">บิลที่เสร็จแล้ว</option>
+          <option value="review">จ่ายแล้ว — ต้องตรวจสอบ</option>
+          {user.role === "ADMIN" && <option value="unfinished">รอชำระ/ยกเลิก (QR)</option>}
+        </select>
         <Button type="submit" variant="outline"><Search /> ค้นหา</Button>
-        {(q || date) && <Link href="/sales" className="text-sm text-muted-foreground hover:underline">ล้างตัวกรอง</Link>}
+        {(q || date || view !== "done") && <Link href="/sales" className="text-sm text-muted-foreground hover:underline">ล้างตัวกรอง</Link>}
       </form>
 
       {data.rows.length === 0 ? (
-        <EmptyState icon={Receipt} title={q || date ? "ไม่พบรายการขายตามเงื่อนไข" : "ยังไม่มีรายการขาย"} description={q || date ? undefined : "เมื่อมีการขายผ่านหน้า POS รายการจะแสดงที่นี่"} />
+        <EmptyState icon={Receipt} title={q || date || view !== "done" ? "ไม่พบรายการขายตามเงื่อนไข" : "ยังไม่มีรายการขาย"} description={q || date || view !== "done" ? undefined : "เมื่อมีการขายผ่านหน้า POS รายการจะแสดงที่นี่"} />
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>เลขที่ใบเสร็จ</TableHead><TableHead>วันเวลา</TableHead><TableHead>พนักงาน</TableHead>
-                <TableHead className="text-right">รายการ</TableHead><TableHead className="text-right">ยอดสุทธิ</TableHead><TableHead>ชำระโดย</TableHead><TableHead>สถานะ</TableHead>
+                <TableHead className="text-right">รายการ</TableHead><TableHead className="text-right">ยอดสุทธิ</TableHead><TableHead>ชำระโดย</TableHead><TableHead>สถานะ</TableHead><TableHead className="text-right">รายละเอียด</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.rows.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell><Link href={`/receipt/${s.id}`} className="font-mono text-xs font-medium text-primary hover:underline">{s.receiptNo}</Link></TableCell>
+                  <TableCell><Link href={s.receiptNo && s.status !== "PAID_NEEDS_REVIEW" ? `/receipt/${s.id}` : `/sales/${s.id}`} className="font-mono text-xs font-medium text-primary hover:underline">{s.receiptNo ?? "(ยังไม่มีเลขที่) ดูรายละเอียด"}</Link></TableCell>
                   <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(s.createdAt))}</TableCell>
                   <TableCell>{s.cashier}</TableCell>
                   <TableCell className="text-right tabular-nums">{s.itemCount}</TableCell>
                   <TableCell className="text-right font-medium tabular-nums">{formatMoney(s.total)}</TableCell>
                   <TableCell>{METHOD_LABEL[s.paymentMethod] ?? s.paymentMethod}</TableCell>
-                  <TableCell><Badge variant={s.status === "COMPLETED" ? "outline" : "secondary"}>{STATUS_LABEL[s.status] ?? s.status}</Badge></TableCell>
+                  <TableCell><Badge variant={s.status === "COMPLETED" ? "outline" : s.status === "PAID_NEEDS_REVIEW" ? "destructive" : "secondary"}>{STATUS_LABEL[s.status] ?? s.status}</Badge></TableCell>
+                  <TableCell className="text-right"><Link href={`/sales/${s.id}`} className="text-xs text-primary hover:underline">ดู</Link></TableCell>
                 </TableRow>
               ))}
             </TableBody>

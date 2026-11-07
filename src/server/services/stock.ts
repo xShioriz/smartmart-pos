@@ -150,3 +150,14 @@ export async function adjustBatch(tx: Tx, actorId: string, input: { batchId: str
   });
   return { productId: batch.productId, batchId: batch.id, before: batch.remainingQty, after: target, delta };
 }
+
+/** ล็อกล็อตที่ขายได้ของสินค้า (FOR UPDATE) แล้วคืนจำนวนที่ขายได้ — ใช้ตรวจก่อนตัดหลายสินค้าโดยไม่ต้อง throw กลางทาง */
+export async function lockSellable(tx: Tx, productId: string, now?: Date): Promise<number> {
+  const today = todayBangkokKey(now);
+  const rows = await tx.$queryRaw<{ remainingQty: number }[]>`
+    SELECT "remainingQty" FROM "ProductBatch"
+    WHERE "productId" = ${productId}::uuid AND "remainingQty" > 0 AND ("expiryDate" IS NULL OR "expiryDate" >= ${today}::date)
+    ORDER BY "expiryDate" ASC NULLS LAST, "receivedAt" ASC, id ASC
+    FOR UPDATE`;
+  return rows.reduce((s, r) => s + r.remainingQty, 0);
+}

@@ -17,3 +17,11 @@ export const checkoutCashSchema = z.object({
     .transform((v) => String(v).trim())
     .pipe(z.string().regex(/^\d{1,9}(\.\d{1,2})?$/, "จำนวนเงินที่รับไม่ถูกต้อง")),
 });
+
+export const startQrSchema = checkoutCashSchema.omit({ amountPaid: true });
+export const paymentIdSchema = z.object({ paymentId: z.string().uuid("รายการชำระเงินไม่ถูกต้อง") });
+export const resolveReviewSchema = z.object({
+  saleId: z.string().uuid(),
+  action: z.enum(["FULFILL", "REFUNDED"]),
+  note: z.string().trim().min(1, "กรุณาระบุหมายเหตุ").max(200, "หมายเหตุยาวเกินไป"),
+});

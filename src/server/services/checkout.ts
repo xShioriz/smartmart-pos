@@ -1,5 +1,6 @@
 // Checkout เงินสด — หัวใจของระบบ: transaction เดียว (Sale + SaleItem + ตัดสต็อก FEFO + Payment + เลขใบเสร็จ)
 // ไม่รับราคา/ยอดรวม/สต็อกจาก client: รับเฉพาะ productId + quantity + เงินที่รับ + idempotencyKey
+import type { Prisma } from "@prisma/client";
 import { db } from "@/server/db";
 import { D, round2 } from "@/lib/money";
 import { toBangkokDateKey } from "@/lib/date";
@@ -21,7 +22,7 @@ export const MAX_LINE_QTY = 9999;
 export const MAX_LINES = 100;
 
 /** รวมแถวที่ productId ซ้ำ และเรียงตาม productId (ลำดับล็อกตายตัว → กัน deadlock) */
-function mergeItems(items: CheckoutInput["items"]) {
+export function mergeItems(items: CheckoutInput["items"]) {
   const map = new Map<string, number>();
   for (const i of items) map.set(i.productId, (map.get(i.productId) ?? 0) + i.quantity);
   const merged = [...map.entries()].map(([productId, quantity]) => ({ productId, quantity })).sort((a, b) => (a.productId < b.productId ? -1 : 1));
@@ -31,6 +32,18 @@ function mergeItems(items: CheckoutInput["items"]) {
     if (!Number.isInteger(m.quantity) || m.quantity < 1 || m.quantity > MAX_LINE_QTY) throw new BusinessError(`จำนวนสินค้าต้องอยู่ระหว่าง 1–${MAX_LINE_QTY}`);
   }
   return merged;
+}
+
+/** โหลดสินค้าที่ขอขายจาก DB (ต้องมีอยู่และเปิดใช้งาน) */
+export async function loadSellableProducts(tx: Prisma.TransactionClient, merged: { productId: string }[]) {
+  const products = await tx.product.findMany({ where: { id: { in: merged.map((m) => m.productId) } } });
+  const byId = new Map(products.map((p) => [p.id, p]));
+  for (const m of merged) {
+    const p = byId.get(m.productId);
+    if (!p) throw new BusinessError("ไม่พบสินค้าบางรายการในระบบ กรุณารีเฟรชหน้า");
+    if (!p.isActive) throw new BusinessError(`สินค้า "${p.name}" ปิดใช้งานแล้ว`);
+  }
+  return byId;
 }
 
 async function findExisting(idempotencyKey: string, actor: CurrentUser): Promise<CheckoutResult | null> {
@@ -51,13 +64,7 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
     const result = await db.$transaction(
       async (tx) => {
         // 1) สินค้า + ราคาจาก DB เท่านั้น
-        const products = await tx.product.findMany({ where: { id: { in: merged.map((m) => m.productId) } } });
-        const byId = new Map(products.map((p) => [p.id, p]));
-        for (const m of merged) {
-          const p = byId.get(m.productId);
-          if (!p) throw new BusinessError("ไม่พบสินค้าบางรายการในระบบ กรุณารีเฟรชหน้า");
-          if (!p.isActive) throw new BusinessError(`สินค้า "${p.name}" ปิดใช้งานแล้ว`);
-        }
+        const byId = await loadSellableProducts(tx, merged);
 
         // 2) คำนวณยอดจากราคาใน DB
         const cart = calculateCart(merged.map((m) => ({ productId: m.productId, unitPrice: byId.get(m.productId)!.price, quantity: m.quantity })));

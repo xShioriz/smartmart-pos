@@ -154,6 +154,32 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
   }
 }
 
+// 4e) QR / webhook (ไม่ต้องล็อกอินสำหรับ webhook แต่ต้องไม่รับของปลอม)
+{
+  const hookUrl = B + "/api/webhooks/payment";
+  let r = await fetch(hookUrl, { method: "POST", body: "not json", redirect: "manual" });
+  check("webhook ไม่ถูกบังคับ login (ไม่ redirect) และ JSON พังถูกปฏิเสธ", [400, 401, 503].includes(r.status), String(r.status));
+  r = await fetch(hookUrl, { redirect: "manual" });
+  check("webhook รับเฉพาะ POST (GET → 405)", r.status === 405, String(r.status));
+  const evId = "evnt_test_guard" + Date.now();
+  r = await fetch(hookUrl, { method: "POST", body: JSON.stringify({ object: "event", id: evId, key: "charge.complete", data: { object: "charge", id: "chrg_test_doesnotexist" } }), redirect: "manual" });
+  const j = await r.json().catch(() => ({}));
+  check("webhook ปลอมของ charge ที่ไม่มีในระบบ → ไม่ทำอะไร (UNKNOWN_CHARGE หรือ 401 ถ้าตั้ง secret)", (r.status === 200 && j.outcome === "UNKNOWN_CHARGE") || r.status === 401 || r.status === 503, r.status + " " + JSON.stringify(j));
+  await db.webhookEvent.deleteMany({ where: { providerEventId: evId } });
+  const big = await fetch(hookUrl, { method: "POST", body: "x".repeat(200_000), redirect: "manual" });
+  check("webhook payload ใหญ่เกิน → 413", big.status === 413, String(big.status));
+  a = await act("startQrPaymentAction", { idempotencyKey: crypto.randomUUID(), items: [{ productId: "00000000-0000-4000-8000-000000000000", quantity: 1 }] }, undefined);
+  check("ไม่ล็อกอิน startQrPaymentAction → ไม่สำเร็จ", !a.text.includes('"ok":true'));
+  a = await act("getQrStatusAction", { paymentId: "00000000-0000-4000-8000-000000000000" }, undefined);
+  check("ไม่ล็อกอิน getQrStatusAction → ไม่สำเร็จ", !a.text.includes('"ok":true'));
+  a = await act("getQrStatusAction", { paymentId: "00000000-0000-4000-8000-000000000000" }, ct);
+  check("แคชเชียร์ถามสถานะ payment ที่ไม่ใช่ของตน/ไม่มี → ไม่พบ", a.text.includes("ไม่พบรายการชำระเงิน"));
+  a = await act("resolveReviewAction", { saleId: "00000000-0000-4000-8000-000000000000", action: "REFUNDED", note: "x" }, ct);
+  check("CASHIER เรียก resolveReviewAction → ปฏิเสธ", a.text.includes("ไม่มีสิทธิ์"));
+  check("/pos แสดงตัวเลือก PromptPay QR", (await body("/pos", ct)).length > 0);
+  check("/sales/[id] ของบิลที่ไม่มี → 404", (await body("/sales/00000000-0000-4000-8000-000000000000", at)).includes("NEXT_HTTP_ERROR_FALLBACK;404"));
+}
+
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit
 a = await act("createUserAction", { ...newUser, role: "CASHIER" }, at);
 const created = await db.user.findUnique({ where: { email: newUser.email } });

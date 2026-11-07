@@ -24,21 +24,21 @@ export async function getReceipt(id: string, viewer: CurrentUser) {
     store,
     sale: {
       id: sale.id, receiptNo: sale.receiptNo, createdAt: sale.createdAt.toISOString(), status: sale.status, cashier: sale.cashier.name,
-      paymentMethod: sale.paymentMethod, subtotal: sale.subtotal.toFixed(2), discountTotal: sale.discountTotal.toFixed(2), total: sale.total.toFixed(2),
+      paymentMethod: sale.paymentMethod, paymentEnv: sale.payment?.environment ?? null, subtotal: sale.subtotal.toFixed(2), discountTotal: sale.discountTotal.toFixed(2), total: sale.total.toFixed(2),
       amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2),
       items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2), discount: i.discountAmount.toFixed(2), net: i.netTotal.toFixed(2) })),
     },
   };
 }
 
-export type SalesFilter = { q?: string; date?: string; page?: number };
+export type SalesFilter = { q?: string; date?: string; page?: number; view?: "done" | "review" | "unfinished" };
 
 export async function listSales(f: SalesFilter, viewer: CurrentUser) {
   const q = f.q?.trim().slice(0, 50);
   const where: Prisma.SaleWhereInput = {
-    receiptNo: { not: null },
+    ...(f.view === "review" ? { status: "PAID_NEEDS_REVIEW" as const } : f.view === "unfinished" && viewer.role === "ADMIN" ? { status: { in: ["PENDING_PAYMENT", "CANCELLED"] as ("PENDING_PAYMENT" | "CANCELLED")[] } } : { OR: [{ receiptNo: { not: null } }, { status: "PAID_NEEDS_REVIEW" as const }] }),
     ...(viewer.role === "ADMIN" ? {} : { cashierId: viewer.id }),
-    ...(q && { receiptNo: { contains: q, mode: "insensitive" } }),
+    ...(q && { receiptNo: { contains: q, mode: "insensitive" as const } }),
     ...(f.date && (() => { const r = bangkokDayRange(f.date); return { createdAt: { gte: r.start, lt: r.end } }; })()),
   };
   const page = Math.max(1, f.page ?? 1);
@@ -54,6 +54,28 @@ export async function listSales(f: SalesFilter, viewer: CurrentUser) {
   ]);
   return {
     total, page, pageCount: Math.max(1, Math.ceil(total / SALES_PAGE_SIZE)),
-    rows: rows.map((s) => ({ id: s.id, receiptNo: s.receiptNo!, createdAt: s.createdAt.toISOString(), cashier: s.cashier.name, itemCount: s._count.items, total: s.total.toFixed(2), paymentMethod: s.paymentMethod, status: s.status })),
+    rows: rows.map((s) => ({ id: s.id, receiptNo: s.receiptNo, createdAt: s.createdAt.toISOString(), cashier: s.cashier.name, itemCount: s._count.items, total: s.total.toFixed(2), paymentMethod: s.paymentMethod, status: s.status })),
+  };
+}
+
+/** รายละเอียดบิล (รวมบิลที่ยังไม่ปิด/ยกเลิก/รอตรวจสอบ) — CASHIER เห็นเฉพาะของตนเอง */
+export async function getSaleDetail(id: string, viewer: CurrentUser) {
+  const sale = await db.sale.findUnique({
+    where: { id },
+    include: { items: { orderBy: { nameSnapshot: "asc" } }, cashier: { select: { name: true } }, payment: true },
+  });
+  if (!sale) return null;
+  if (viewer.role !== "ADMIN" && sale.cashierId !== viewer.id) return null;
+  const pay = sale.payment;
+  return {
+    id: sale.id, receiptNo: sale.receiptNo, status: sale.status, createdAt: sale.createdAt.toISOString(), cashier: sale.cashier.name,
+    paymentMethod: sale.paymentMethod, subtotal: sale.subtotal.toFixed(2), discountTotal: sale.discountTotal.toFixed(2), total: sale.total.toFixed(2),
+    amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2),
+    payment: pay && {
+      status: pay.status, environment: pay.environment, provider: pay.provider, amount: pay.amount.toFixed(2),
+      chargeRef: pay.providerChargeId ? `…${pay.providerChargeId.slice(-8)}` : null,
+      paidAt: pay.paidAt?.toISOString() ?? null, confirmedVia: pay.confirmedVia, failureReason: pay.failureReason,
+    },
+    items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2) })),
   };
 }

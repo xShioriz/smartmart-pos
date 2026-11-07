@@ -73,3 +73,19 @@
 - /sales: ค้นด้วยเลขที่ใบเสร็จ + กรองวัน (เวลาไทย) + แบ่งหน้า; CASHIER เห็นเฉพาะบิลตนเอง; หน้ารายละเอียดบิลแยกเป็นงาน Day 7 (ตอนนี้ลิงก์ไปใบเสร็จ)
 - เทสต์: checkout.test.ts 14 เคส (ขายสำเร็จ/ข้ามล็อต/snapshot/rollback/ซ้ำ/พร้อมกัน/deadlock/หมดอายุ/Zod) รวม 43 เคส + guard script รวม POS/ใบเสร็จ/ประวัติการขายผ่าน HTTP
 - ยังไม่ได้ตรวจด้วยตา: หน้า POS/ใบเสร็จ/พิมพ์ (ล็อกอินในเบราว์เซอร์ไม่ได้) → ต้องทดสอบมือก่อนถือว่า Day 5 เสร็จ
+
+## 2026-11-07 — Day 6 (PromptPay QR ผ่าน Opn Payments Sandbox)
+- โครง: `payments/{types,config,opn,registry}.ts` (adapter) + `services/payments.ts` + `/api/webhooks/payment`; เปลี่ยน Provider = เขียน adapter ใหม่
+- **PAID ได้ทางเดียว:** `confirmPaid()` ซึ่งถูกเรียกหลัง `reconcilePayment()` ดึง Charge จาก Provider API เอง และตรวจ chargeId / ยอด (สตางค์) / THB / livemode ตรงกับ environment ของ Payment / metadata.paymentId — webhook เป็นแค่สัญญาณ ไม่เชื่อ body (ทดสอบ: webhook อ้างว่าสำเร็จแต่ Provider บอก pending → ไม่ PAID)
+- Idempotent: WebhookEvent unique ที่ event id (ซ้ำ+เสร็จแล้ว = ตอบ 200 ไม่ทำซ้ำ; ซ้ำแต่ยังไม่เสร็จ = ทำต่อ) + `updateMany … WHERE status IN (PENDING, EXPIRED, FAILED)` เป็นประตูเดียว → webhook/reconcile พร้อมกันหลายตัวปิดบิลครั้งเดียว
+- ไม่จองสต็อกระหว่างรอ: ตรวจเบื้องต้นตอนสร้าง QR, ตรวจจริง+ตัดตอนได้รับเงิน (ล็อกแถวก่อนตรวจทุกสินค้า แล้วค่อยตัด — ไม่มีการตัดครึ่งๆกลางๆ); ไม่พอ → `PAID_NEEDS_REVIEW` (amountPaid=ยอดบิล เพื่อผ่าน CHECK) + แจ้งเตือน PAYMENT_REVIEW → ADMIN เลือก "ตัดสต็อกและปิดบิล" (หลังเติมสต็อก) หรือ "คืนเงินแล้ว" (โอนคืนนอกระบบ) พร้อมหมายเหตุ + audit
+- **บั๊กที่เทสต์จับได้:** ตั้ง `PAID_NEEDS_REVIEW` แล้วชน CHECK `sale_paid_enough` (amountPaid=0 < total) → แก้โดยตั้ง amountPaid=total
+- จ่ายล่าช้า (หลัง EXPIRED/FAILED/ยกเลิกโดยแคชเชียร์): ถ้า Provider ยืนยันว่าสำเร็จ ระบบรับเงินและปิดบิล (หรือส่งตรวจสอบถ้าสต็อกไม่พอ) — เงินเข้าแล้วต้องไม่หายจากระบบ
+- Provider ยกเลิก PromptPay charge ไม่ได้ (ไม่มี expire/void) → "ยกเลิก QR" = ยกเลิกฝั่งเรา (Payment FAILED, reason CANCELLED_BY_CASHIER, บิล CANCELLED) QR เดิมสแกนจ่ายได้จนหมดเวลา (ค่าเริ่มต้น 10 นาที; ตั้ง `qr_expire_minutes` ใน SystemSetting ได้)
+- ยอด QR ต้อง 20–150,000 บาท (ข้อจำกัดของ Provider)
+- ไม่มี cron: หน้า POS poll ทุก 2.5 วินาที และเซิร์ฟเวอร์ reconcile กับ Provider ไม่ถี่เกิน 5 วินาทีต่อรายการ (สำรองเมื่อ webhook ไม่มา/ช้า — Omise ไม่รับประกัน retry); กลับมาทำรายการที่ค้างได้หลังรีเฟรช (localStorage) และห้ามปิดหน้าต่างชำระเงินขณะรอ QR (ต้องกดยกเลิก)
+- Sandbox/Production: `PAYMENT_ENV` + key แยก; sandbox ต้อง `skey_test_`; production ต้อง live key และต้องเป็น deployment production จริง (Preview/dev = sandbox เท่านั้น) ไม่เช่นนั้น throw; `Payment.environment` เก็บทุกรายการ; แสดงป้าย SANDBOX บนหน้า QR, ใบเสร็จ (เฉพาะ QR) และรายละเอียดบิล
+- ไม่มีปุ่ม/endpoint จำลองจ่ายในแอป; `FakeProvider` อยู่เฉพาะในไฟล์เทสต์ (และสลับได้เฉพาะ NODE_ENV=test); ทดสอบ Sandbox จริงด้วย `scripts/smoke-sandbox-qr.mts` ซึ่งใช้ `mark_as_paid` / `mark_as_failed` ของ Provider (มีเฉพาะ test mode)
+- Webhook secret (`PAYMENT_WEBHOOK_SECRET`, base64): ถ้าตั้ง → ตรวจ HMAC + timestamp ±5 นาที; ถ้าไม่ตั้ง → ตรวจลายเซ็นไม่ได้ (พึ่งการดึง Charge จาก API ซึ่งทำเสมอ)
+- ผลทดสอบ: vitest 66 เคส (payments 23 เคส) + guard script 63 ข้อ + smoke test กับ Sandbox จริงผ่าน (สร้าง QR, ตรวจ charge, STILL_PENDING, mark_as_failed → MARKED_FAILED, mark_as_paid → CONFIRMED + ตัดสต็อก)
+- ยังไม่ได้ทดสอบ: webhook ยิงจริงจาก Provider ไปยัง URL สาธารณะ (ต้องตั้งบน Vercel), หน้าจอ QR ด้วยตา, การคืนเงินบิล QR (Day 8 — โอนคืนนอกระบบ)

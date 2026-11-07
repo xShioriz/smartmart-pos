@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Minus, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
+import { Banknote, Loader2, Minus, Plus, QrCode, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
 import type { PosProduct } from "@/server/services/pos";
-import { checkoutCashAction } from "./actions";
+import type { QrState } from "@/server/services/payments";
+import { checkoutCashAction, getQrStatusAction } from "./actions";
+import { QR_STORAGE_KEY, QrPanel } from "./qr-panel";
 
 type CartLine = { productId: string; qty: number };
 type Action =
@@ -43,13 +45,18 @@ const satang = (price: string) => Math.round(Number(price) * 100);
 const baht = (s: number) => formatMoney(s / 100);
 const parseMoneyToSatang = (v: string) => (/^\d{1,9}(\.\d{1,2})?$/.test(v.trim()) ? Math.round(Number(v) * 100) : null);
 
-export function PosTerminal({ products }: { products: PosProduct[] }) {
+export type PaymentInfo = { enabled: boolean; environment: "SANDBOX" | "PRODUCTION" | null; reason?: string };
+
+export function PosTerminal({ products, payment }: { products: PosProduct[]; payment: PaymentInfo }) {
   const router = useRouter();
   const [cart, dispatch] = useReducer(reducer, []);
   const hydrated = useRef(false);
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [payOpen, setPayOpen] = useState(false);
+  const [method, setMethod] = useState<"cash" | "qr">("cash");
+  const [qrLocked, setQrLocked] = useState(false);
+  const [qrInitial, setQrInitial] = useState<QrState | null>(null);
   const [clearOpen, setClearOpen] = useState(false);
   const [paid, setPaid] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +139,7 @@ export function PosTerminal({ products }: { products: PosProduct[] }) {
   function openPay() {
     if (!lines.length) return;
     idemKey.current ??= crypto.randomUUID();
-    setPaid(""); setError(null); setPayOpen(true);
+    setPaid(""); setError(null); setMethod("cash"); setPayOpen(true);
   }
 
   function confirmPay() {
@@ -156,6 +163,29 @@ export function PosTerminal({ products }: { products: PosProduct[] }) {
       }
     });
   }
+
+  // กลับมาทำรายการ QR ที่ค้างอยู่ (รีเฟรช/ปิดแท็บระหว่างรอลูกค้าจ่าย)
+  useEffect(() => {
+    let id: string | undefined;
+    try { id = JSON.parse(localStorage.getItem(QR_STORAGE_KEY) ?? "null")?.paymentId; } catch { /* ignore */ }
+    if (!id) return;
+    (async () => {
+      const res = await getQrStatusAction({ paymentId: id });
+      if (!res.ok) { try { localStorage.removeItem(QR_STORAGE_KEY); } catch { /* ignore */ } return; }
+      const s = res.data;
+      if (s.status === "PENDING") { setQrInitial(s); setMethod("qr"); setPayOpen(true); return; }
+      try { localStorage.removeItem(QR_STORAGE_KEY); } catch { /* ignore */ }
+      if (s.status === "PAID" && s.saleStatus === "COMPLETED") { dispatch({ type: "clear" }); toast.success("ได้รับเงินแล้ว ขายสำเร็จ"); router.push(`/receipt/${s.saleId}`); }
+    })();
+  }, [router]);
+
+  const getQrKey = useCallback(() => (idemKey.current ??= crypto.randomUUID()), []);
+  const renewQrKey = useCallback(() => { idemKey.current = crypto.randomUUID(); }, []);
+  const onQrCompleted = useCallback((saleId: string) => {
+    dispatch({ type: "clear" });
+    setPayOpen(false); setQrInitial(null);
+    if (saleId) router.push(`/receipt/${saleId}`); else router.refresh();
+  }, [router]);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]">
@@ -249,43 +279,65 @@ export function PosTerminal({ products }: { products: PosProduct[] }) {
         <div className="space-y-3 border-t p-4">
           <div className="flex items-baseline justify-between"><span className="text-sm text-muted-foreground">ยอดรวม (ก่อนส่วนลด)</span><span className="tabular-nums">{baht(totalSatang)}</span></div>
           <div className="flex items-baseline justify-between"><span className="font-semibold">ยอดสุทธิ</span><span className="text-2xl font-bold text-primary tabular-nums">{baht(totalSatang)}</span></div>
-          <Button className="h-11 w-full text-base" disabled={!lines.length} onClick={openPay}>ชำระเงินสด</Button>
+          <Button className="h-11 w-full text-base" disabled={!lines.length} onClick={openPay}>ชำระเงิน</Button>
           <p className="text-center text-[11px] text-muted-foreground">ยอดจริงคำนวณจากราคาในระบบอีกครั้งตอนยืนยัน</p>
         </div>
       </aside>
 
       {/* ชำระเงิน */}
-      <Dialog open={payOpen} onOpenChange={(o) => { if (!pending) setPayOpen(o); }}>
+      <Dialog open={payOpen} onOpenChange={(o) => { if (!pending && !qrLocked) setPayOpen(o); }}>
         <DialogContent>
-          <form onSubmit={(e) => { e.preventDefault(); confirmPay(); }} className="space-y-4">
-            <DialogHeader>
-              <DialogTitle>ชำระเงินสด</DialogTitle>
-              <DialogDescription>{lines.length} รายการ / {itemCount} ชิ้น</DialogDescription>
-            </DialogHeader>
-            <div className="rounded-xl bg-green-50 p-4 text-center">
-              <p className="text-sm text-green-800">ยอดที่ต้องชำระ</p>
-              <p className="text-4xl font-bold text-green-700 tabular-nums">{baht(totalSatang)}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="paid">รับเงินมา (บาท)</Label>
-              <Input id="paid" value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="decimal" autoFocus autoComplete="off" className="h-11 text-lg tabular-nums" aria-invalid={paid !== "" && paidSatang === null} />
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setPaid((totalSatang / 100).toFixed(2))}>พอดี</Button>
-                {[100, 500, 1000].map((v) => <Button key={v} type="button" variant="outline" size="sm" onClick={() => setPaid(String(v))}>฿{v.toLocaleString("th-TH")}</Button>)}
+          <DialogHeader>
+            <DialogTitle>{method === "cash" ? "ชำระเงินสด" : "ชำระด้วย PromptPay QR"}</DialogTitle>
+            <DialogDescription>{lines.length} รายการ / {itemCount} ชิ้น</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2" role="tablist" aria-label="วิธีชำระเงิน">
+            <Button type="button" role="tab" aria-selected={method === "cash"} variant={method === "cash" ? "default" : "outline"} disabled={qrLocked || pending} onClick={() => setMethod("cash")}><Banknote /> เงินสด</Button>
+            <Button type="button" role="tab" aria-selected={method === "qr"} variant={method === "qr" ? "default" : "outline"} disabled={qrLocked || pending || !payment.enabled} title={payment.enabled ? undefined : payment.reason} onClick={() => setMethod("qr")}><QrCode /> PromptPay QR</Button>
+          </div>
+          {!payment.enabled && <p className="text-xs text-muted-foreground">QR ยังใช้ไม่ได้: {payment.reason}</p>}
+
+          {method === "qr" && payment.enabled ? (
+            <QrPanel
+              key={qrInitial?.paymentId ?? "new"}
+              items={lines.map((l) => ({ productId: l.productId, quantity: l.qty }))}
+              totalLabel={baht(totalSatang)}
+              initial={qrInitial}
+              getKey={getQrKey}
+              renewKey={renewQrKey}
+              onCompleted={onQrCompleted}
+              onLockChange={setQrLocked}
+            />
+          ) : (
+            <form onSubmit={(e) => { e.preventDefault(); confirmPay(); }} className="space-y-4">
+              <div className="rounded-xl bg-green-50 p-4 text-center">
+                <p className="text-sm text-green-800">ยอดที่ต้องชำระ</p>
+                <p className="text-4xl font-bold text-green-700 tabular-nums">{baht(totalSatang)}</p>
               </div>
-            </div>
-            <div className={cn("flex items-baseline justify-between rounded-lg border p-3", enough ? "border-green-300 bg-green-50" : "bg-muted/40")}>
-              <span className="text-sm">{paidSatang === null ? "เงินทอน" : enough ? "เงินทอน" : "ยังขาด"}</span>
-              <span className={cn("text-2xl font-bold tabular-nums", enough ? "text-green-700" : "text-destructive")}>
-                {paidSatang === null ? "-" : baht(Math.abs(paidSatang - totalSatang))}
-              </span>
-            </div>
-            {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-            <DialogFooter>
-              <Button type="button" variant="outline" disabled={pending} onClick={() => setPayOpen(false)}>ยกเลิก</Button>
-              <Button type="submit" disabled={!enough || pending} className="min-w-32">{pending && <Loader2 className="animate-spin" />} ยืนยันการขาย</Button>
-            </DialogFooter>
-          </form>
+              <div className="space-y-2">
+                <Label htmlFor="paid">รับเงินมา (บาท)</Label>
+                <Input id="paid" value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="decimal" autoFocus autoComplete="off" className="h-11 text-lg tabular-nums" aria-invalid={paid !== "" && paidSatang === null} />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPaid((totalSatang / 100).toFixed(2))}>พอดี</Button>
+                  {[100, 500, 1000].map((v) => <Button key={v} type="button" variant="outline" size="sm" onClick={() => setPaid(String(v))}>฿{v.toLocaleString("th-TH")}</Button>)}
+                </div>
+              </div>
+              <div className={cn("flex items-baseline justify-between rounded-lg border p-3", enough ? "border-green-300 bg-green-50" : "bg-muted/40")}>
+                <span className="text-sm">{paidSatang === null ? "เงินทอน" : enough ? "เงินทอน" : "ยังขาด"}</span>
+                <span className={cn("text-2xl font-bold tabular-nums", enough ? "text-green-700" : "text-destructive")}>
+                  {paidSatang === null ? "-" : baht(Math.abs(paidSatang - totalSatang))}
+                </span>
+              </div>
+              {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+              <DialogFooter>
+                <Button type="button" variant="outline" disabled={pending} onClick={() => setPayOpen(false)}>ยกเลิก</Button>
+                <Button type="submit" disabled={!enough || pending} className="min-w-32">{pending && <Loader2 className="animate-spin" />} ยืนยันการขาย</Button>
+              </DialogFooter>
+            </form>
+          )}
+          {method === "qr" && !qrLocked && (
+            <DialogFooter><Button type="button" variant="outline" onClick={() => setPayOpen(false)}>ปิด</Button></DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -72,7 +72,10 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <div className="flex justify-between"><dt>รับเงิน</dt><dd className="tabular-nums">{formatMoney(sale.amountPaid)}</dd></div>
           <div className="flex justify-between"><dt>เงินทอน</dt><dd className="tabular-nums">{formatMoney(sale.change)}</dd></div>
         </dl>
-        {sale.status !== "COMPLETED" && <p className="mt-2 text-center font-bold">** {sale.status === "FULLY_RETURNED" ? "คืนสินค้าทั้งบิล" : "มีการคืนสินค้าบางส่วน"} **</p>}
+        {sale.paymentEnv === "SANDBOX" && sale.paymentMethod !== "CASH" && (
+          <p className="mt-2 border border-dashed border-black p-1 text-center font-bold">*** SANDBOX — โหมดทดสอบ ไม่ใช่เงินจริง ***</p>
+        )}
+        {sale.status !== "COMPLETED" &&<p className="mt-2 text-center font-bold">** {sale.status === "FULLY_RETURNED" ? "คืนสินค้าทั้งบิล" : "มีการคืนสินค้าบางส่วน"} **</p>}
         {store.footer && (<><div className="my-2 border-t border-dashed border-black" /><p className="text-center">{store.footer}</p></>)}
       </article>
     </>

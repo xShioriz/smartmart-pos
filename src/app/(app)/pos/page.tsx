@@ -3,6 +3,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { requirePage } from "@/server/auth/guard";
 import { listPosProducts } from "@/server/services/pos";
+import { describePaymentConfig } from "@/server/payments/config";
 import { PosTerminal } from "./pos-terminal";
 
 export default async function PosPage() {
@@ -14,7 +15,7 @@ export default async function PosPage() {
       {products.length === 0 ? (
         <EmptyState icon={PackageSearch} title="ยังไม่มีสินค้าที่เปิดขาย" description="ให้ผู้ดูแลระบบเพิ่มสินค้าและรับสต็อกเข้าก่อน" />
       ) : (
-        <PosTerminal products={products} />
+        <PosTerminal products={products} payment={describePaymentConfig()} />
       )}
     </>
   );
