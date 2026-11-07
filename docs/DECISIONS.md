@@ -129,3 +129,11 @@
 - **ข้อมูลสาธิต** `scripts/seed-demo.mts` (`ALLOW_DEMO_SEED=1 npx tsx scripts/seed-demo.mts --days 30`): สร้างบิล **เงินสด** ย้อนหลังผ่าน `checkoutCash` ตัวจริง (ใส่ `at` เพื่อกำหนดเวลาขาย — Server Action ไม่ส่งค่านี้และ Zod ทิ้งฟิลด์ที่ไม่รู้จัก) → โปรโมชั่น/FEFO/แต้ม/เลขใบเสร็จครบ; เติมสต็อกย้อนหลังให้พอ; มีสินค้าขายช้า/แนวโน้มขาขึ้น/วันหยุดขายดี; คืนสินค้าบางบิลของวันนี้; **ไม่สร้างบิล QR** (ต้องยืนยันจาก Provider จริง — สาธิต QR สดกับ Sandbox) — ต้องยืนยันด้วย env เพราะเพิ่มข้อมูลถาวร; **ยังไม่ได้รันกับฐานจริง** (รันเฉพาะในเทสต์ด้วยสินค้า ZZ)
 - เทสต์ใหม่: reports 6 (เทียบ oracle), bi 15, workflow 4 (ครบวงจร: สินค้า→โปร→สมาชิก→ขายเงินสด+QR→คืน→ปรับสต็อก→รายงาน/แจ้งเตือน/audit, ข้อมูลสาธิต, ตั้งค่า) รวม **140 เคส**; guard script **111 ข้อ** (รวม Dashboard/รายงาน/ตั้งค่า, ช่วงวันผิดปกติ, ไม่มี secret ในหน้าตั้งค่า)
 - ยังไม่ได้ทดสอบด้วยตา: Dashboard, รายงาน (กราฟ), ตั้งค่า
+
+## Day 10 — Production deploy (ในระหว่างดำเนินการ)
+- Production = Vercel + Neon branch/project แยกจาก dev; PromptPay ยังเป็น Sandbox (ไม่มี merchant account) ระบุไว้ใน README
+- Migration/seed ฐาน production ทำจากเครื่องผู้ใช้ผ่านตัวแปรใน terminal (ชนะ .env) ไม่แก้ .env และไม่ส่ง secret ผ่านแชต
+- เพิ่ม `scripts/check-deploy.mts` (ตรวจ env/migration/สต็อก ไม่พิมพ์ค่า secret), `docs/DEPLOY.md`, README ใหม่
+- ข้อมูลสาธิตบน production เป็นทางเลือก ต้องผู้ใช้ยืนยันฐานปลายทางเอง
+- ผลตรวจ production (ผู้ใช้ทดสอบเอง): login, ขายเงินสด, ขาย QR Sandbox (Mark as paid), คืนสินค้า, dashboard/reports/settings และสิทธิ์ CASHIER ผ่านทั้งหมด
+- ปัญหาที่พบตอน deploy: login 500 เพราะยังไม่ได้ migrate ฐาน production (`public.User does not exist`) แก้ด้วย `prisma migrate deploy` + seed; ควรรัน `scripts/check-deploy.mts` ก่อน Redeploy เสมอ
