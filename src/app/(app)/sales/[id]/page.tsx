@@ -11,6 +11,7 @@ import { formatDateTime } from "@/lib/date";
 import { requirePage } from "@/server/auth/guard";
 import { getSaleDetail } from "@/server/services/sales";
 import { ResolveReview } from "./resolve-review";
+import { ReturnDialog } from "./return-dialog";
 
 const STATUS: Record<string, string> = {
   PENDING_PAYMENT: "รอชำระเงิน", COMPLETED: "สำเร็จ", PARTIALLY_RETURNED: "คืนบางส่วน", FULLY_RETURNED: "คืนทั้งบิล", CANCELLED: "ยกเลิก", PAID_NEEDS_REVIEW: "จ่ายแล้ว — ต้องตรวจสอบ",
@@ -36,6 +37,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
           <div className="flex items-center gap-2">
             <Badge variant={sale.status === "COMPLETED" ? "outline" : sale.status === "PAID_NEEDS_REVIEW" ? "destructive" : "secondary"}>{STATUS[sale.status] ?? sale.status}</Badge>
             {sale.receiptNo && <Link href={`/receipt/${sale.id}`}><Button variant="outline" size="sm"><Receipt /> ดูใบเสร็จ</Button></Link>}
+            {sale.canReturn && <ReturnDialog saleId={sale.id} items={sale.items.map((i) => ({ id: i.id, name: i.name, quantity: i.quantity, returnedQty: i.returnedQty }))} isQr={sale.isQr} />}
           </div>
         }
       />
@@ -46,20 +48,21 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
         <section className="overflow-x-auto rounded-xl border bg-card lg:col-span-2">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50"><TableHead>สินค้า</TableHead><TableHead className="text-right">จำนวน</TableHead><TableHead className="text-right">ราคา/หน่วย</TableHead><TableHead className="text-right">ส่วนลด</TableHead><TableHead className="text-right">สุทธิ</TableHead></TableRow>
+              <TableRow className="bg-muted/50"><TableHead>สินค้า</TableHead><TableHead className="text-right">จำนวน</TableHead><TableHead className="text-right">คืนแล้ว</TableHead><TableHead className="text-right">ราคา/หน่วย</TableHead><TableHead className="text-right">ส่วนลด</TableHead><TableHead className="text-right">สุทธิ</TableHead></TableRow>
             </TableHeader>
             <TableBody>
               {sale.items.map((i) => (
                 <TableRow key={i.id}>
                   <TableCell><div className="font-medium">{i.name}</div><div className="font-mono text-xs text-muted-foreground">{i.sku}</div>{i.promotionName && <div className="text-xs text-green-700">{i.promotionName}</div>}</TableCell>
                   <TableCell className="text-right tabular-nums">{i.quantity}</TableCell>
+                  <TableCell className="text-right tabular-nums">{i.returnedQty > 0 ? i.returnedQty : "-"}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(i.unitPrice)}</TableCell>
                   <TableCell className="text-right tabular-nums">{Number(i.discount) > 0 ? `-${formatMoney(i.discount)}` : "-"}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(i.net)}</TableCell>
                 </TableRow>
               ))}
-              {Number(sale.billDiscount) > 0 && <TableRow><TableCell colSpan={4} className="text-right text-sm text-muted-foreground">รวมส่วนลดทั้งบิลที่กระจายในรายการข้างต้น{sale.billPromotionName ? ` (${sale.billPromotionName})` : ""}</TableCell><TableCell className="text-right tabular-nums">-{formatMoney(sale.billDiscount)}</TableCell></TableRow>}
-              <TableRow><TableCell colSpan={4} className="text-right font-semibold">ยอดสุทธิ</TableCell><TableCell className="text-right text-base font-bold tabular-nums">{formatMoney(sale.total)}</TableCell></TableRow>
+              {Number(sale.billDiscount) > 0 && <TableRow><TableCell colSpan={5} className="text-right text-sm text-muted-foreground">รวมส่วนลดทั้งบิลที่กระจายในรายการข้างต้น{sale.billPromotionName ? ` (${sale.billPromotionName})` : ""}</TableCell><TableCell className="text-right tabular-nums">-{formatMoney(sale.billDiscount)}</TableCell></TableRow>}
+              <TableRow><TableCell colSpan={5} className="text-right font-semibold">ยอดสุทธิ</TableCell><TableCell className="text-right text-base font-bold tabular-nums">{formatMoney(sale.total)}</TableCell></TableRow>
             </TableBody>
           </Table>
         </section>
@@ -83,6 +86,26 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
           {sale.paymentMethod === "CASH" && (<><Row k="รับเงิน" v={formatMoney(sale.amountPaid)} /><Row k="เงินทอน" v={formatMoney(sale.change)} /></>)}
         </aside>
       </div>
+
+      {sale.returns.length > 0 && (
+        <section className="mt-6">
+          <h2 className="mb-2 text-lg font-semibold">ประวัติการคืนสินค้า</h2>
+          <div className="space-y-3">
+            {sale.returns.map((r) => (
+              <div key={r.id} className="rounded-xl border bg-card p-4 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-mono text-xs font-medium">{r.returnNo} <span className="font-sans text-muted-foreground">· {formatDateTime(new Date(r.createdAt))} · โดย {r.by}</span></p>
+                  <p className="text-base font-semibold tabular-nums text-primary">คืนเงิน {formatMoney(r.refundTotal)}</p>
+                </div>
+                <ul className="mt-2 space-y-0.5">
+                  {r.items.map((i) => <li key={i.id} className="flex justify-between"><span>{i.name} × {i.quantity}{i.restock ? "" : " (ของเสีย ไม่คืนสต็อก)"}</span><span className="tabular-nums">{formatMoney(i.refund)}</span></li>)}
+                </ul>
+                <p className="mt-2 text-xs text-muted-foreground">เหตุผล: {r.reason}{r.refundNote ? ` · ${r.refundNote}` : ""}{r.pointsReversed > 0 ? ` · หักแต้ม ${r.pointsReversed}` : ""}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

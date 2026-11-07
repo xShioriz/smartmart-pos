@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Bell, Boxes, ChevronLeft, ChevronRight, History, Search } from "lucide-react";
+import { Boxes, ChevronLeft, ChevronRight, History, Search } from "lucide-react";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,8 +12,7 @@ import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/date";
 import { requirePage } from "@/server/auth/guard";
 import { listInventory, listMovements, type InventoryFilter } from "@/server/services/inventory";
-import { listNotifications, syncNotifications } from "@/server/services/notifications";
-import { NotificationList } from "./notification-list";
+import { syncNotifications } from "@/server/services/notifications";
 
 const selectClass = "h-8 rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 const MOVEMENT_LABEL: Record<string, string> = { INITIAL: "ยอดยกมา", RESTOCK: "รับเข้า", SALE: "ขาย", ADJUSTMENT: "ปรับยอด", RETURN: "คืนสินค้า" };
@@ -24,12 +24,13 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   const user = await requirePage(["ADMIN", "CASHIER"]);
   const isAdmin = user.role === "ADMIN";
   const sp = await searchParams;
-  const tab = isAdmin ? z.enum(["stock", "movements", "alerts"]).catch("stock").parse(sp.tab) : "stock";
+  if (sp.tab === "alerts") redirect("/notifications"); // ลิงก์เก่า: แจ้งเตือนย้ายไปหน้าเฉพาะแล้ว
+  const tab = isAdmin ? z.enum(["stock", "movements"]).catch("stock").parse(sp.tab) : "stock";
   const q = sp.q?.trim().slice(0, 100) || undefined;
 
   const tabs = [
     { key: "stock", label: "คงเหลือ", icon: Boxes },
-    ...(isAdmin ? [{ key: "movements", label: "ประวัติเคลื่อนไหว", icon: History }, { key: "alerts", label: "แจ้งเตือน", icon: Bell }] : []),
+    ...(isAdmin ? [{ key: "movements", label: "ประวัติเคลื่อนไหว", icon: History }] : []),
   ];
 
   return (
@@ -48,7 +49,6 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
       </div>
       {tab === "stock" && <StockTab q={q} filter={z.enum(["all", "low", "out", "near_expiry", "expired"]).catch("all").parse(sp.filter)} isAdmin={isAdmin} />}
       {tab === "movements" && <MovementsTab type={z.enum(["INITIAL", "RESTOCK", "SALE", "ADJUSTMENT", "RETURN"]).safeParse(sp.type).data} page={z.coerce.number().int().min(1).catch(1).parse(sp.page)} />}
-      {tab === "alerts" && <AlertsTab />}
     </>
   );
 }
@@ -158,8 +158,3 @@ async function MovementsTab({ type, page }: { type?: string; page: number }) {
   );
 }
 
-async function AlertsTab() {
-  await syncNotifications();
-  const items = await listNotifications(false);
-  return <NotificationList items={items} />;
-}

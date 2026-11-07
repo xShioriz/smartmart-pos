@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/server/db";
 import { bangkokDayRange } from "@/lib/date";
+import { listReturns } from "./returns";
 import type { CurrentUser } from "@/server/auth/guard";
 
 export const SALES_PAGE_SIZE = 20;
@@ -68,17 +69,21 @@ export async function getSaleDetail(id: string, viewer: CurrentUser) {
   if (!sale) return null;
   if (viewer.role !== "ADMIN" && sale.cashierId !== viewer.id) return null;
   const pay = sale.payment;
+  const returns = await listReturns(sale.id);
   return {
     id: sale.id, receiptNo: sale.receiptNo, status: sale.status, createdAt: sale.createdAt.toISOString(), cashier: sale.cashier.name,
     paymentMethod: sale.paymentMethod, subtotal: sale.subtotal.toFixed(2), discountTotal: sale.discountTotal.toFixed(2), total: sale.total.toFixed(2),
     amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2),
     billDiscount: sale.billDiscount.toFixed(2), billPromotionName: sale.billPromotionName, pointsEarned: sale.pointsEarned,
     member: sale.member,
+    canReturn: viewer.role === "ADMIN" && (sale.status === "COMPLETED" || sale.status === "PARTIALLY_RETURNED"),
+    isQr: sale.paymentMethod === "PROMPTPAY",
+    returns,
     payment: pay && {
       status: pay.status, environment: pay.environment, provider: pay.provider, amount: pay.amount.toFixed(2),
       chargeRef: pay.providerChargeId ? `…${pay.providerChargeId.slice(-8)}` : null,
       paidAt: pay.paidAt?.toISOString() ?? null, confirmedVia: pay.confirmedVia, failureReason: pay.failureReason,
     },
-    items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2), discount: i.discountAmount.toFixed(2), net: i.netTotal.toFixed(2), promotionName: i.promotionName })),
+    items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, returnedQty: i.returnedQty, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2), discount: i.discountAmount.toFixed(2), net: i.netTotal.toFixed(2), promotionName: i.promotionName })),
   };
 }

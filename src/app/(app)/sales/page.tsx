@@ -63,14 +63,19 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
             <TableBody>
               {data.rows.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell><Link href={s.receiptNo && s.status !== "PAID_NEEDS_REVIEW" ? `/receipt/${s.id}` : `/sales/${s.id}`} className="font-mono text-xs font-medium text-primary hover:underline">{s.receiptNo ?? "(ยังไม่มีเลขที่) ดูรายละเอียด"}</Link></TableCell>
+                  <TableCell><Link href={`/sales/${s.id}`} className="font-mono text-xs font-medium text-primary hover:underline">{s.receiptNo ?? "(ยังไม่มีเลขที่) ดูรายละเอียด"}</Link></TableCell>
                   <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(s.createdAt))}</TableCell>
                   <TableCell>{s.cashier}</TableCell>
                   <TableCell className="text-right tabular-nums">{s.itemCount}</TableCell>
                   <TableCell className="text-right font-medium tabular-nums">{formatMoney(s.total)}</TableCell>
                   <TableCell>{METHOD_LABEL[s.paymentMethod] ?? s.paymentMethod}</TableCell>
                   <TableCell><Badge variant={s.status === "COMPLETED" ? "outline" : s.status === "PAID_NEEDS_REVIEW" ? "destructive" : "secondary"}>{STATUS_LABEL[s.status] ?? s.status}</Badge></TableCell>
-                  <TableCell className="text-right"><Link href={`/sales/${s.id}`} className="text-xs text-primary hover:underline">ดู</Link></TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-3 text-xs">
+                      <Link href={`/sales/${s.id}`} className="text-primary hover:underline">รายละเอียด{user.role === "ADMIN" && (s.status === "COMPLETED" || s.status === "PARTIALLY_RETURNED") ? " / คืนสินค้า" : ""}</Link>
+                      {s.receiptNo && <Link href={`/receipt/${s.id}`} className="text-muted-foreground hover:underline">ใบเสร็จ</Link>}
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

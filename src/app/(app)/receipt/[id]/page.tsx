@@ -26,6 +26,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 print:hidden">
         <Link href="/sales" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> ประวัติการขาย</Link>
         <div className="flex gap-2">
+          <Link href={`/sales/${sale.id}`}><Button variant="outline">{user.role === "ADMIN" && (sale.status === "COMPLETED" || sale.status === "PARTIALLY_RETURNED") ? "รายละเอียด / คืนสินค้า" : "รายละเอียดบิล"}</Button></Link>
           <PrintButton />
           <Link href="/pos"><Button><ShoppingCart /> ขายรายการใหม่</Button></Link>
         </div>

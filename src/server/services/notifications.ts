@@ -71,7 +71,11 @@ export async function listNotifications(onlyUnread: boolean) {
     orderBy: [{ isRead: "asc" }, { createdAt: "desc" }],
     take: 200,
   });
-  return rows.map((n) => ({ id: n.id, type: n.type, title: n.title, message: n.message, productId: n.productId, isRead: n.isRead, createdAt: n.createdAt.toISOString() }));
+  return rows.map((n) => ({
+    id: n.id, type: n.type, title: n.title, message: n.message, isRead: n.isRead, createdAt: n.createdAt.toISOString(),
+    // ลิงก์ไปหน้าที่แก้ปัญหา: บิลรอตรวจสอบ → รายละเอียดบิล, นอกนั้น → รายละเอียดสต็อกของสินค้า
+    href: n.type === "PAYMENT_REVIEW" && n.dedupeKey.startsWith("PAYMENT_REVIEW:") ? `/sales/${n.dedupeKey.slice("PAYMENT_REVIEW:".length)}` : n.productId ? `/inventory/${n.productId}` : null,
+  }));
 }
 
 export const markNotificationRead = (id: string) => db.notification.update({ where: { id }, data: { isRead: true } });

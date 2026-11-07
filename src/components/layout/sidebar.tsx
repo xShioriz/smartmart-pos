@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, IdCard, LayoutDashboard, Package, Percent, Settings, ShoppingBasket, ShoppingCart, Tags, Users, Receipt } from "lucide-react";
+import { BarChart3, Bell, Boxes, IdCard, ScrollText, LayoutDashboard, Package, Percent, Settings, ShoppingBasket, ShoppingCart, Tags, Users, Receipt } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
@@ -16,10 +16,12 @@ const ITEMS: Item[] = [
   { href: "/categories", label: "หมวดหมู่", icon: Tags, roles: ["ADMIN"], ready: true },
   { href: "/promotions", label: "โปรโมชั่น", icon: Percent, roles: ["ADMIN"], ready: true },
   { href: "/members", label: "สมาชิก", icon: IdCard, roles: ["ADMIN"], ready: true },
+  { href: "/notifications", label: "การแจ้งเตือน", icon: Bell, roles: ["ADMIN"], ready: true },
   { href: "/inventory", label: "คลังสินค้า", icon: Boxes, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/sales", label: "ประวัติการขาย", icon: Receipt, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/reports", label: "รายงาน", icon: BarChart3, roles: ["ADMIN"], ready: false },
   { href: "/users", label: "ผู้ใช้งาน", icon: Users, roles: ["ADMIN"], ready: true },
+  { href: "/audit", label: "บันทึกการใช้งาน", icon: ScrollText, roles: ["ADMIN"], ready: true },
   { href: "/settings", label: "ตั้งค่า", icon: Settings, roles: ["ADMIN"], ready: false },
 ];
 

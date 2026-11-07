@@ -96,13 +96,15 @@ a = await act('markAllNotificationsReadAction', undefined, ct); check('CASHIER �
 const inv = await body('/inventory', ct);
 check('CASHIER ดู /inventory ได้ (คงเหลือ)', inv.includes('DR001') && !inv.includes('ประวัติเคลื่อนไหว'));
 const invAlerts = await body('/inventory?tab=alerts', ct);
-check('CASHIER ขอ tab=alerts → ได้แท็บคงเหลือเท่านั้น', !invAlerts.includes('อ่านทั้งหมด') && !invAlerts.includes('ไม่มีการแจ้งเตือน'));
+check('ลิงก์เก่า /inventory?tab=alerts ถูกพาไป /notifications (ไม่แสดงแจ้งเตือนในหน้าคลัง)', invAlerts.includes('NEXT_REDIRECT') && !invAlerts.includes('อ่านทั้งหมด'));
 const prodRow = await db.product.findUniqueOrThrow({ where: { sku: 'DR001' } });
 const detailC = await body('/inventory/' + prodRow.id, ct);
 check('CASHIER ดูรายละเอียดล็อตได้ แต่ไม่เห็นทุน/ปุ่มปรับ/ประวัติ', detailC.includes('ล็อตสินค้า') && !detailC.includes('รับสินค้าเข้า') && !detailC.includes('ทุน/หน่วย') && !detailC.includes('ประวัติการเคลื่อนไหวล่าสุด'));
 const detailA = await body('/inventory/' + prodRow.id, at);
 check('ADMIN เห็นปุ่มรับเข้า ทุน และประวัติ', detailA.includes('รับสินค้าเข้า') && detailA.includes('ทุน/หน่วย') && detailA.includes('ประวัติการเคลื่อนไหวล่าสุด'));
-check('ADMIN เห็นแท็บแจ้งเตือน', (await body('/inventory?tab=alerts', at)).includes('แจ้งเตือน'));
+check('CASHIER เข้า /notifications และ /audit → redirect ไม่รั่วข้อมูล', (await body('/notifications', ct)).includes('NEXT_REDIRECT') && (await body('/audit', ct)).includes('NEXT_REDIRECT'));
+check('ADMIN เข้า /notifications ได้', (await body('/notifications', at)).includes('การแจ้งเตือน'));
+check('ADMIN เข้า /audit เห็นบันทึก', (await body('/audit', at)).includes('Audit Log'));
 check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory/not-a-uuid', at)).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
 
 // 4d) POS / checkout / ใบเสร็จ / ประวัติการขาย (สร้างสินค้าทดสอบเอง ลบเมื่อจบ)
@@ -157,10 +159,32 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
     check('/sales: CASHIER เห็นเฉพาะบิลตนเอง', listC.includes(cashierReceiptNo) && !listC.includes(adminReceiptNo));
     check('/sales: ADMIN เห็นทุกบิล', listA.includes(cashierReceiptNo) && listA.includes(adminReceiptNo));
     check('/pos: ราคา/สต็อกแสดงจาก DB', (await body('/pos', ct)).includes('ZZGUARD POS'));
+
+    // คืนสินค้า: ADMIN เท่านั้น + ผลต่อสต็อก/สถานะ + กันซ้ำ
+    const adminItem = await db.saleItem.findFirstOrThrow({ where: { saleId: adminSale } });
+    const retBody = (key, qty = 1) => ({ saleId: adminSale, items: [{ saleItemId: adminItem.id, quantity: qty, restock: true }], reason: 'ทดสอบ', refundNote: '', idempotencyKey: key });
+    a = await act('previewReturnAction', { saleId: adminSale, items: [{ saleItemId: adminItem.id, quantity: 1, restock: true }] }, ct);
+    check('CASHIER previewReturnAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+    a = await act('returnSaleAction', retBody(uuid()), ct);
+    check('CASHIER returnSaleAction → ปฏิเสธ ไม่คืนสต็อก', a.text.includes('ไม่มีสิทธิ์') && (await stockNow()) === 7);
+    a = await act('returnSaleAction', retBody(uuid()), undefined);
+    check('ไม่ล็อกอิน returnSaleAction → ไม่สำเร็จ', !a.text.includes('"ok":true') && (await stockNow()) === 7);
+    const rkey = uuid();
+    a = await act('returnSaleAction', retBody(rkey), at);
+    check('ADMIN คืน 1 ชิ้น: คืนเงิน 50.00, สต็อกกลับ, บิลเป็นคืนบางส่วน', a.text.includes('"refundTotal":"50.00"') && (await stockNow()) === 8 && (await db.sale.findUniqueOrThrow({ where: { id: adminSale } })).status === 'PARTIALLY_RETURNED', a.text.slice(0, 160));
+    a = await act('returnSaleAction', retBody(rkey), at);
+    check('ส่งคำขอคืนเดิมซ้ำ (key เดิม) → ไม่คืนซ้ำ', (await stockNow()) === 8 && (await db.saleReturn.count({ where: { saleId: adminSale } })) === 1);
+    a = await act('returnSaleAction', retBody(uuid(), 5), at);
+    check('คืนเกินจำนวนที่เหลือ → ปฏิเสธ', a.text.includes('คืน') && (await stockNow()) === 8 && (await db.saleReturn.count({ where: { saleId: adminSale } })) === 1);
+    const detailAdmin = await body('/sales/' + adminSale, at);
+    check('ADMIN เห็นปุ่มคืนสินค้าและประวัติการคืนในรายละเอียดบิล', detailAdmin.includes('คืนสินค้า') && detailAdmin.includes('RT-'));
+    check('CASHIER ดูรายละเอียดบิลของตนเองได้ แต่ไม่เห็นปุ่มคืนสินค้า', !(await body('/sales/' + cashierSale, ct)).includes('คืนสินค้า / คืนเงิน'));
+    check('CASHIER ดูรายละเอียดบิลของ ADMIN ไม่ได้ (404)', (await body('/sales/' + adminSale, ct)).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
   } finally {
     const saleIds = (await db.saleItem.findMany({ where: { productId: prod.id }, select: { saleId: true } })).map((s) => s.saleId);
     await db.notification.deleteMany({ where: { productId: prod.id } });
     await db.stockMovement.deleteMany({ where: { productId: prod.id } });
+    await db.saleReturn.deleteMany({ where: { saleId: { in: saleIds } } });
     await db.payment.deleteMany({ where: { saleId: { in: saleIds } } });
     await db.sale.deleteMany({ where: { id: { in: saleIds } } });
     await db.productBatch.deleteMany({ where: { productId: prod.id } });

@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { cn } from "@/lib/utils";
 import { markAllNotificationsReadAction, markNotificationReadAction } from "./actions";
 
-type Item = { id: string; type: string; title: string; message: string; productId: string | null; isRead: boolean; createdAt: string };
+type Item = { id: string; type: string; title: string; message: string; href: string | null; isRead: boolean; createdAt: string };
 
 const TYPE_STYLE: Record<string, string> = {
   OUT_OF_STOCK: "bg-red-100 text-red-800",
@@ -18,6 +18,7 @@ const TYPE_STYLE: Record<string, string> = {
   NEAR_EXPIRY: "bg-orange-100 text-orange-800",
   PAYMENT_REVIEW: "bg-red-100 text-red-800",
 };
+
 
 export function NotificationList({ items }: { items: Item[] }) {
   const [pending, start] = useTransition();
@@ -41,7 +42,7 @@ export function NotificationList({ items }: { items: Item[] }) {
             <Badge className={TYPE_STYLE[n.type]}>{n.title}</Badge>
             <div className="min-w-0 flex-1 text-sm">
               <p>{n.message}</p>
-              {n.productId && <Link href={`/inventory/${n.productId}`} className="text-xs text-primary hover:underline">ดูรายละเอียดสินค้า</Link>}
+              {n.href && <Link href={n.href} className="text-xs text-primary hover:underline">{n.type === "PAYMENT_REVIEW" ? "ไปจัดการบิล" : "ดูรายละเอียดสินค้า"}</Link>}
             </div>
             {!n.isRead && (
               <Button variant="ghost" size="sm" disabled={pending} onClick={() => start(async () => { await markNotificationReadAction({ id: n.id }); })}>

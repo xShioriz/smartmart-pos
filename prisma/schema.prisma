@@ -341,6 +341,7 @@ model SaleItemBatch {
   saleItemId String  @db.Uuid
   batchId    String  @db.Uuid
   quantity   Int
+  restoredQty Int     @default(0) // คืนเข้าล็อตนี้แล้วกี่หน่วย (จากการคืนสินค้า)
   unitCost   Decimal @db.Decimal(12, 2)
 
   saleItem SaleItem     @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
@@ -354,6 +355,7 @@ model SaleReturn {
   id             String   @id @default(uuid()) @db.Uuid
   returnSeq      Int      @unique @default(autoincrement())
   returnNo       String   @unique
+  idempotencyKey String?  @unique // กันกดคืนซ้ำ (สร้างจาก client ต่อ 1 คำขอ)
   saleId         String   @db.Uuid
   reason         String
   refundTotal    Decimal  @db.Decimal(12, 2)
