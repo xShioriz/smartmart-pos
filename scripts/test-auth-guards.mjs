@@ -76,6 +76,18 @@ check("Zod: รหัสผ่านสั้น → ปฏิเสธ", a.text
 a = await act("createUserAction", { ...newUser, email: "admin@smartmart.local" }, at);
 check("อีเมลซ้ำ → ปฏิเสธ", a.text.includes("ถูกใช้แล้ว"));
 
+// 4b) catalog actions
+const prod = { sku: 'ZZGUARD-1', barcode: '', name: 'x', categoryId: '00000000-0000-4000-8000-000000000000', costPrice: '1', price: '1', unit: 'ชิ้น', minStock: 0, initialQty: 0, initialExpiry: '' };
+a = await act('createProductAction', prod, ct); check('CASHIER เรียก createProductAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+a = await act('updateProductAction', { ...prod, id: '00000000-0000-4000-8000-000000000000' }, ct); check('CASHIER เรียก updateProductAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+a = await act('setProductActiveAction', { id: '00000000-0000-4000-8000-000000000000', isActive: false }, ct); check('CASHIER เรียก setProductActiveAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+a = await act('createCategoryAction', { name: 'ZZGUARD', description: '' }, ct); check('CASHIER เรียก createCategoryAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+a = await act('deleteCategoryAction', { id: '00000000-0000-4000-8000-000000000000' }, ct); check('CASHIER เรียก deleteCategoryAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+check('ไม่มีหมวด ZZGUARD ถูกสร้าง', (await db.category.count({ where: { name: 'ZZGUARD' } })) === 0);
+for (const p of ['/products', '/categories']) check('CASHIER เข้า ' + p + ' → redirect ไม่รั่วข้อมูล', (await body(p, ct)).includes('NEXT_REDIRECT'));
+check('ADMIN เข้า /products เห็นสินค้า seed', (await body('/products', at)).includes('DR001'));
+check('ADMIN เข้า /categories เห็นหมวด seed', (await body('/categories', at)).includes('เครื่องดื่ม'));
+
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit
 a = await act("createUserAction", { ...newUser, role: "CASHIER" }, at);
 const created = await db.user.findUnique({ where: { email: newUser.email } });

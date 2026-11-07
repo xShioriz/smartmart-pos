@@ -39,3 +39,13 @@
 - ไม่มี rate limit ที่ login (ข้อจำกัดที่ยอมรับใน MVP); login ล้มเหลวบันทึก `LOGIN_FAILED` ใน AuditLog
 - เมนูที่ยังไม่พัฒนาแสดง "เร็ว ๆ นี้" (ปิดการคลิก) และหน้า /dashboard /pos เป็น placeholder ที่ระบุชัดว่ายังไม่พร้อม
 - สคริปต์ `scripts/test-auth-guards.mjs` ทดสอบ guard + server action ด้วยคำขอจริง
+
+## 2026-11-07 — Day 3 (Category + Product)
+- สต็อกเริ่มต้นตอนสร้างสินค้า = batch แรก (`INIT-yyyyMMdd-NN`) + StockMovement INITIAL ผ่าน `stock.receiveBatch` (Day 4 ใช้ต่อสำหรับรับเข้า/ปรับสต็อก); สต็อก 0 = ไม่สร้าง batch
+- แก้สต็อกจากฟอร์มสินค้าไม่ได้ (ต้องไปหน้าคลังสินค้า Day 4)
+- ราคา/ทุนรับเป็นสตริง regex `^\d{1,9}(\.\d{1,2})?$` → Decimal (ไม่ผ่าน float); barcode ว่าง → null
+- ไม่มีการลบสินค้า (ปิดใช้งานเท่านั้น); ลบหมวดได้เมื่อไม่มีสินค้า/โปรโมชั่นอ้างอิง
+- Audit: CATEGORY_*, PRODUCT_CREATE/UPDATE/PRICE_CHANGE/ENABLE/DISABLE (ไม่บันทึกเมื่อไม่มีการเปลี่ยนค่า)
+- ค้นหา/กรอง/แบ่งหน้าเป็นฟอร์ม GET + searchParams (ทำงานไม่ต้องพึ่ง JS); กรอง "ใกล้หมด" เลื่อนไปหน้าคลังสินค้า (Prisma เทียบคอลัมน์กับคอลัมน์ไม่ได้)
+- เทสต์: vitest integration ต่อ DB dev (`npm test`, ข้อมูลทดสอบขึ้นต้น ZZTEST และลบเมื่อจบ) + scripts/test-auth-guards.mjs (30 ข้อ)
+- ข้อควรระวังตอนทดสอบ: ถ้า `npm run dev` ของผู้ใช้เปิดพอร์ต 3000 อยู่ สคริปต์ที่เปิด `npm start` จะชนกัน (action id ไม่ตรง) — ปิด dev server ก่อนรัน
