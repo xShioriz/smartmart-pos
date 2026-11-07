@@ -89,3 +89,7 @@
 - Webhook secret (`PAYMENT_WEBHOOK_SECRET`, base64): ถ้าตั้ง → ตรวจ HMAC + timestamp ±5 นาที; ถ้าไม่ตั้ง → ตรวจลายเซ็นไม่ได้ (พึ่งการดึง Charge จาก API ซึ่งทำเสมอ)
 - ผลทดสอบ: vitest 66 เคส (payments 23 เคส) + guard script 63 ข้อ + smoke test กับ Sandbox จริงผ่าน (สร้าง QR, ตรวจ charge, STILL_PENDING, mark_as_failed → MARKED_FAILED, mark_as_paid → CONFIRMED + ตัดสต็อก)
 - ยังไม่ได้ทดสอบ: webhook ยิงจริงจาก Provider ไปยัง URL สาธารณะ (ต้องตั้งบน Vercel), หน้าจอ QR ด้วยตา, การคืนเงินบิล QR (Day 8 — โอนคืนนอกระบบ)
+
+### Checkpoint Day 6 — ผ่าน (2026-11-07)
+- ทดสอบบน Vercel (`smartmart-pos-sage.vercel.app`) กับ Opn Sandbox: ขาย QR → Mark as successful ที่ Dashboard → บิลปิดสำเร็จ และรายละเอียดบิลแสดง "ยืนยันโดย: Webhook จาก Provider" (ผู้ใช้ยืนยันด้วยตา) = webhook ถึงจริงและผ่านขั้นตอนตรวจกับ Provider API
+- ยังไม่ได้ทดสอบบน Vercel: กรณี mark failed / ยกเลิก QR / จ่ายล่าช้า / สต็อกไม่พอ (ทดสอบเฉพาะเทสต์อัตโนมัติและ Sandbox ผ่านสคริปต์)
