@@ -239,6 +239,33 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
   a = await act('searchMembersAction', { q: 'M000' }, undefined); check('ไม่ล็อกอิน searchMembersAction → ไม่สำเร็จ', !a.text.includes('M0001'));
 }
 
+// 4g) Dashboard / รายงาน / ตั้งค่า (Day 9)
+{
+  for (const p of ['/dashboard', '/reports', '/settings']) check('CASHIER เข้า ' + p + ' → redirect ไม่รั่วข้อมูล', (await body(p, ct)).includes('NEXT_REDIRECT'));
+  for (const p of ['/dashboard', '/dashboard?range=30', '/reports', '/reports?from=2026-01-01&to=2026-01-31', '/settings']) {
+    const r = await get(p, at);
+    check('ADMIN เปิด ' + p + ' ได้ (200)', r.status === 200, String(r.status));
+  }
+  const dash = await body('/dashboard', at);
+  check('Dashboard แสดงตัวชี้วัดหลักและ Smart BI พร้อมป้ายระบุว่าไม่ใช่ AI', dash.includes('ยอดขายสุทธิวันนี้') && dash.includes('Smart BI') && dash.includes('ไม่ใช้ AI'));
+  const rep = await body('/reports', at);
+  check('รายงานแสดงสรุปและแยกเงินสด/QR', rep.includes('ยอดขายสุทธิ') && rep.includes('PromptPay QR') && rep.includes('วิธีคำนวณ'));
+  const badRange = await body('/reports?from=2026-12-31&to=2026-01-01', at);
+  check('ช่วงวันที่ย้อนกลับ → ใช้ค่าเริ่มต้นพร้อมข้อความแจ้ง (ไม่ error)', badRange.includes('ต้องไม่หลังวันสิ้นสุด'));
+  const hugeRange = await body('/reports?from=2000-01-01&to=2026-01-01', at);
+  check('ช่วงวันเกิน 366 วัน → ใช้ค่าเริ่มต้นพร้อมข้อความแจ้ง', hugeRange.includes('ไม่เกิน 366 วัน'));
+  const garbage = await get('/reports?from=<script>&to=x', at);
+  check('พารามิเตอร์วันที่ขยะไม่ทำให้พัง (200)', garbage.status === 200, String(garbage.status));
+  const st = await body('/settings', at);
+  check('หน้าตั้งค่าไม่เผยแพร่ secret key ของ Provider', !/skey_(test|live)_/.test(st) && st.includes('อ่านอย่างเดียว'));
+  a = await act('updateSettingsAction', { store_name: 'x', store_address: '', store_phone: '', receipt_footer: '', points_per_baht: 25, near_expiry_days: 30, qr_expire_minutes: 10 }, ct);
+  check('CASHIER updateSettingsAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+  a = await act('updateSettingsAction', { store_name: 'x', store_address: '', store_phone: '', receipt_footer: '', points_per_baht: 0, near_expiry_days: 30, qr_expire_minutes: 10 }, at);
+  check('ADMIN ตั้งค่าไม่ถูกต้อง (แต้ม 0) → ปฏิเสธโดยไม่บันทึก', a.text.includes('ไม่น้อยกว่า 1'));
+  a = await act('updateSettingsAction', { store_name: 'x', store_address: '', store_phone: '', receipt_footer: '', points_per_baht: 25, near_expiry_days: 30, qr_expire_minutes: 10 }, undefined);
+  check('ไม่ล็อกอิน updateSettingsAction → ไม่สำเร็จ', !a.text.includes('"ok":true'));
+}
+
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit
 a = await act("createUserAction", { ...newUser, role: "CASHIER" }, at);
 const created = await db.user.findUnique({ where: { email: newUser.email } });

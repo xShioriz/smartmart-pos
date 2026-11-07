@@ -17,6 +17,7 @@ export type CheckoutInput = {
   items: { productId: string; quantity: number }[];
   amountPaid: string; // สตริงเงิน (ตรวจรูปแบบแล้วที่ Zod)
   memberId?: string | null;
+  at?: Date; // เวลาที่ขาย (ข้อมูลสาธิต/ทดสอบย้อนหลังเท่านั้น; แอปจริงไม่ส่งค่านี้)
   expectedTotal?: string | null; // ยอดที่ลูกค้า/แคชเชียร์เห็นบนหน้าจอ — ไม่ตรงกับที่คำนวณจริง = ปฏิเสธ (ไม่ใช่การเชื่อยอดจาก client)
 };
 
@@ -89,7 +90,7 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
       async (tx) => {
         // 1) สินค้า + ราคา + โปรโมชั่นจาก DB เท่านั้น; สมาชิกต้องมีอยู่และใช้งานอยู่
         if (input.memberId) await assertMemberUsable(tx, input.memberId);
-        const { byId, cart } = await priceMerged(tx, merged, { expectedTotal: input.expectedTotal });
+        const { byId, cart } = await priceMerged(tx, merged, { expectedTotal: input.expectedTotal, now: input.at });
 
         // 2) ตรวจเงินที่รับ
         const paid = round2(input.amountPaid);
@@ -100,6 +101,7 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
         const sale = await tx.sale.create({
           data: {
             idempotencyKey: input.idempotencyKey,
+            ...(input.at && { createdAt: input.at }),
             cashierId: actor.id,
             status: "PENDING_PAYMENT",
             subtotal: cart.subtotal,
@@ -118,7 +120,7 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
         // 4) ตัดสต็อก FEFO ทีละสินค้า (เรียงตาม productId) + บันทึกรายการขาย snapshot
         for (const line of cart.lines) {
           const p = byId.get(line.productId)!;
-          const allocations = await consumeFefo(tx, { productId: p.id, qty: line.quantity, type: "SALE", actorId: actor.id, saleId: sale.id });
+          const allocations = await consumeFefo(tx, { productId: p.id, qty: line.quantity, type: "SALE", actorId: actor.id, saleId: sale.id, now: input.at });
           const costSum = allocations.reduce((s, a) => s.add(a.unitCost.mul(a.quantity)), D(0));
           const item = await tx.saleItem.create({
             data: {
@@ -141,7 +143,7 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
 
         // 5) ชำระเงิน + ออกเลขใบเสร็จ + ปิดบิล
         await tx.payment.create({
-          data: { saleId: sale.id, method: "CASH", status: "PAID", environment: "PRODUCTION", amount: cart.total, paidAt: new Date() },
+          data: { saleId: sale.id, method: "CASH", status: "PAID", environment: "PRODUCTION", amount: cart.total, paidAt: input.at ?? new Date() },
         });
         const receiptNo = `SM-${toBangkokDateKey(sale.createdAt).replaceAll("-", "")}-${String(sale.saleNo).padStart(5, "0")}`;
         await tx.sale.update({ where: { id: sale.id }, data: { status: "COMPLETED", receiptNo, amountPaid: paid, changeAmount: change } });
