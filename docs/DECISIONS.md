@@ -31,3 +31,11 @@
 - ต้องทำเมื่อไป Production: ขอเปิด PromptPay ที่ support + ยอมรับเงื่อนไข (ต้องมี Merchant ที่ผ่านการยืนยัน)
 - ข้อมูลยังไม่ได้ทดสอบ: การยิง webhook จริงจาก Dashboard ไปยัง URL สาธารณะ (ทำ Day 6/10)
 - ชาร์จทดสอบ spike 1 รายการ (20 บาท, metadata.spike=true) ถูกสร้างใน Sandbox ปล่อยให้หมดอายุเอง
+
+## 2026-11-07 — Day 2 (Auth, Layout, Users)
+- Next 16: `middleware` → `proxy.ts` (ตรวจแค่ cookie ลงชื่อถูกต้องหรือไม่); การตรวจสิทธิ์จริงอยู่ที่ `requirePage()` / `requireAction()` ซึ่งโหลดผู้ใช้จาก DB ทุกคำขอ → ปิดบัญชี/เปลี่ยน role มีผลทันที
+- เพราะมี `loading.tsx` หน้าที่ถูก redirect จาก requirePage จะตอบ HTTP 200 พร้อม NEXT_REDIRECT ในสตรีม (เบราว์เซอร์ถูกพาไปหน้าใหม่) — ตรวจแล้วว่าไม่มีข้อมูลหน้านั้นรั่วในเนื้อหา
+- shadcn รุ่นนี้ใช้ base-ui (ไม่ใช่ radix) และแพ็กเกจ `cn` (shadcn-ui/cn); ธีมเขียว `oklch(0.627 0.194 149.214)`, ฟอนต์ Noto Sans Thai
+- ไม่มี rate limit ที่ login (ข้อจำกัดที่ยอมรับใน MVP); login ล้มเหลวบันทึก `LOGIN_FAILED` ใน AuditLog
+- เมนูที่ยังไม่พัฒนาแสดง "เร็ว ๆ นี้" (ปิดการคลิก) และหน้า /dashboard /pos เป็น placeholder ที่ระบุชัดว่ายังไม่พร้อม
+- สคริปต์ `scripts/test-auth-guards.mjs` ทดสอบ guard + server action ด้วยคำขอจริง
