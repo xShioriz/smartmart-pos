@@ -11,8 +11,8 @@ import type { CurrentUser } from "@/server/auth/guard";
 import { uniqueViolationFields } from "@/server/prisma-errors";
 import { getProvider } from "@/server/payments/registry";
 import { ProviderError, type ProviderCharge } from "@/server/payments/types";
-import { calculateCart } from "./pricing";
-import { loadSellableProducts, mergeItems } from "./checkout";
+import { mergeItems, priceMerged } from "./checkout";
+import { assertMemberUsable, awardPoints } from "./members";
 import { consumeFefo, InsufficientStockError, lockSellable } from "./stock";
 import { getSettingNumber } from "./settings";
 
@@ -43,7 +43,7 @@ async function stateOf(paymentId: string): Promise<QrState> {
 
 /* ───────────── เริ่มชำระด้วย QR ───────────── */
 
-export async function startQrPayment(actor: CurrentUser, input: { idempotencyKey: string; items: { productId: string; quantity: number }[] }): Promise<QrState> {
+export async function startQrPayment(actor: CurrentUser, input: { idempotencyKey: string; items: { productId: string; quantity: number }[]; memberId?: string | null; expectedTotal?: string | null }): Promise<QrState> {
   const merged = mergeItems(input.items);
 
   const replay = await findByKey(input.idempotencyKey, actor);
@@ -55,8 +55,8 @@ export async function startQrPayment(actor: CurrentUser, input: { idempotencyKey
   let created: { saleId: string; paymentId: string; total: Prisma.Decimal };
   try {
     created = await db.$transaction(async (tx) => {
-      const byId = await loadSellableProducts(tx, merged);
-      const cart = calculateCart(merged.map((m) => ({ productId: m.productId, unitPrice: byId.get(m.productId)!.price, quantity: m.quantity })));
+      if (input.memberId) await assertMemberUsable(tx, input.memberId);
+      const { byId, cart } = await priceMerged(tx, merged, { expectedTotal: input.expectedTotal });
       const satang = toSatang(cart.total);
       if (satang < QR_MIN_SATANG) throw new BusinessError("ยอดต่ำกว่า 20 บาท ชำระด้วย QR ไม่ได้ กรุณาใช้เงินสด");
       if (satang > QR_MAX_SATANG) throw new BusinessError("ยอดเกิน 150,000 บาท ชำระด้วย QR ไม่ได้");
@@ -74,13 +74,14 @@ export async function startQrPayment(actor: CurrentUser, input: { idempotencyKey
       const sale = await tx.sale.create({
         data: {
           idempotencyKey: input.idempotencyKey, cashierId: actor.id, status: "PENDING_PAYMENT", subtotal: cart.subtotal,
-          discountTotal: cart.discountTotal, total: cart.total, paymentMethod: "PROMPTPAY", amountPaid: D(0), changeAmount: D(0),
+          discountTotal: cart.discountTotal, billDiscount: cart.billDiscount, billPromotionId: cart.billPromotion?.id ?? null, billPromotionName: cart.billPromotion?.name ?? null,
+          memberId: input.memberId ?? null, total: cart.total, paymentMethod: "PROMPTPAY", amountPaid: D(0), changeAmount: D(0),
         },
       });
       await tx.saleItem.createMany({
         data: cart.lines.map((l) => {
           const p = byId.get(l.productId)!;
-          return { saleId: sale.id, productId: p.id, skuSnapshot: p.sku, nameSnapshot: p.name, unitPrice: l.unitPrice, unitCost: D(0), quantity: l.quantity, lineTotal: l.lineTotal, discountAmount: l.discountAmount, netTotal: l.netTotal };
+          return { saleId: sale.id, productId: p.id, promotionId: l.promotion?.id ?? null, promotionName: l.promotion?.name ?? null, skuSnapshot: p.sku, nameSnapshot: p.name, unitPrice: l.unitPrice, unitCost: D(0), quantity: l.quantity, lineTotal: l.lineTotal, discountAmount: l.discountAmount, netTotal: l.netTotal };
         }),
       });
       const payment = await tx.payment.create({
@@ -160,6 +161,7 @@ async function fulfillPaidSale(tx: Tx, saleId: string): Promise<"COMPLETED" | "N
   }
   const receiptNo = `SM-${toBangkokDateKey(sale.createdAt).replaceAll("-", "")}-${String(sale.saleNo).padStart(5, "0")}`;
   await tx.sale.update({ where: { id: saleId }, data: { status: "COMPLETED", receiptNo, amountPaid: sale.total, changeAmount: D(0) } });
+  await awardPoints(tx, saleId); // ให้แต้มเมื่อบิลปิดสมบูรณ์เท่านั้น (ไม่ให้ตอนยังรอจ่าย/รอตรวจสอบ)
   return "COMPLETED";
 }
 

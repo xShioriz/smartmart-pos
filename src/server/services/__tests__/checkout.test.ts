@@ -9,6 +9,7 @@ import type { CurrentUser } from "@/server/auth/guard";
 import { checkoutCash } from "@/server/services/checkout";
 import { checkoutCashSchema } from "@/lib/validators/checkout";
 import { InsufficientStockError, receiveBatch } from "@/server/services/stock";
+import { _setPromotionLoaderForTests } from "@/server/services/promotions";
 
 const TAG = `ZZCHK${Date.now().toString(36).toUpperCase()}`;
 let admin: CurrentUser;
@@ -43,9 +44,11 @@ beforeAll(async () => {
   admin = { id: a.id, email: a.email, name: a.name, role: a.role };
   cashier = { id: c.id, email: c.email, name: c.name, role: c.role };
   catId = (await db.category.create({ data: { name: `${TAG} หมวด` } })).id;
+  _setPromotionLoaderForTests(async () => []); // ตรวจยอดเงินแน่นอน ไม่ปนกับโปรโมชั่นจริงใน DB
 });
 
 afterAll(async () => {
+  _setPromotionLoaderForTests(null);
   const ids = (await db.product.findMany({ where: { sku: { startsWith: TAG } }, select: { id: true } })).map((p) => p.id);
   const saleIds = (await db.saleItem.findMany({ where: { productId: { in: ids } }, select: { saleId: true } })).map((s) => s.saleId);
   await db.notification.deleteMany({ where: { productId: { in: ids } } });
@@ -156,12 +159,15 @@ describe("ปฏิเสธ + rollback", () => {
   });
 
   it("Zod: จำนวน 0/ติดลบ/ทศนิยม/เกินสูงสุด, ตะกร้าว่าง, เงินรูปแบบผิด, key ไม่ใช่ uuid", () => {
-    const base = { idempotencyKey: randomUUID(), items: [{ productId: randomUUID(), quantity: 1 }], amountPaid: "10" };
+    const base = { idempotencyKey: randomUUID(), items: [{ productId: randomUUID(), quantity: 1 }], amountPaid: "10", expectedTotal: "10" };
     expect(checkoutCashSchema.safeParse(base).success).toBe(true);
     for (const q of [0, -1, 1.5, 10000]) expect(checkoutCashSchema.safeParse({ ...base, items: [{ productId: randomUUID(), quantity: q }] }).success).toBe(false);
     expect(checkoutCashSchema.safeParse({ ...base, items: [] }).success).toBe(false);
     for (const m of ["-5", "1.234", "abc", ""]) expect(checkoutCashSchema.safeParse({ ...base, amountPaid: m }).success).toBe(false);
     expect(checkoutCashSchema.safeParse({ ...base, idempotencyKey: "x" }).success).toBe(false);
+    expect(checkoutCashSchema.safeParse({ ...base, expectedTotal: undefined }).success).toBe(false);
+    expect(checkoutCashSchema.safeParse({ ...base, memberId: "ไม่ใช่ uuid" }).success).toBe(false);
+    expect(checkoutCashSchema.safeParse({ ...base, memberId: null }).success).toBe(true);
   });
 });
 

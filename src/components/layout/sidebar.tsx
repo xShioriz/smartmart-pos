@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Boxes, LayoutDashboard, Package, Settings, ShoppingBasket, ShoppingCart, Tags, Users, Receipt } from "lucide-react";
+import { BarChart3, Boxes, IdCard, LayoutDashboard, Package, Percent, Settings, ShoppingBasket, ShoppingCart, Tags, Users, Receipt } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,8 @@ const ITEMS: Item[] = [
   { href: "/pos", label: "ขายหน้าร้าน (POS)", icon: ShoppingCart, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/products", label: "สินค้า", icon: Package, roles: ["ADMIN"], ready: true },
   { href: "/categories", label: "หมวดหมู่", icon: Tags, roles: ["ADMIN"], ready: true },
+  { href: "/promotions", label: "โปรโมชั่น", icon: Percent, roles: ["ADMIN"], ready: true },
+  { href: "/members", label: "สมาชิก", icon: IdCard, roles: ["ADMIN"], ready: true },
   { href: "/inventory", label: "คลังสินค้า", icon: Boxes, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/sales", label: "ประวัติการขาย", icon: Receipt, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/reports", label: "รายงาน", icon: BarChart3, roles: ["ADMIN"], ready: false },

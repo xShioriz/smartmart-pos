@@ -107,30 +107,44 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
 
 // 4d) POS / checkout / ใบเสร็จ / ประวัติการขาย (สร้างสินค้าทดสอบเอง ลบเมื่อจบ)
 {
-  const cat = await db.category.findFirstOrThrow();
+  const cat = await db.category.create({ data: { name: 'ZZGUARD-CAT' } });
   const prod = await db.product.create({ data: { sku: 'ZZGUARD-POS', name: 'ZZGUARD POS', categoryId: cat.id, costPrice: '10', price: '50', stockQty: 10 } });
   await db.productBatch.create({ data: { productId: prod.id, batchNo: 'ZZG-1', costPrice: '10', initialQty: 10, remainingQty: 10 } });
   const uuid = () => crypto.randomUUID();
   const saleIdOf = (t) => (t.match(/"saleId":"([0-9a-f-]{36})"/) || [])[1];
   const stockNow = async () => (await db.product.findUniqueOrThrow({ where: { id: prod.id } })).stockQty;
   try {
-    let r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '100' }, undefined);
+    let r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '100', expectedTotal: '50.00' }, undefined);
     check('ไม่ล็อกอิน checkoutCashAction → ไม่สำเร็จ + ไม่ตัดสต็อก', !r.text.includes('"ok":true') && (await stockNow()) === 10);
+    // ยอดที่คาดไม่ตรง → ปฏิเสธ ไม่ตัดสต็อก
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '1000', expectedTotal: '1.00' }, at);
+    check('expectedTotal ไม่ตรงกับที่เซิร์ฟเวอร์คำนวณ → ปฏิเสธ ไม่ตัดสต็อก', r.text.includes('ราคาหรือโปรโมชั่นเปลี่ยนแปลง') && (await stockNow()) === 10);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '1000' }, at);
+    check('ไม่ส่ง expectedTotal → ปฏิเสธ (บังคับตรวจยอด)', !r.text.includes('"ok":true') && (await stockNow()) === 10);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '1000', expectedTotal: '50.00', memberId: uuid() }, at);
+    check('สมาชิกที่ไม่มีอยู่ → ปฏิเสธ ไม่ตัดสต็อก', r.text.includes('ไม่พบสมาชิก') && (await stockNow()) === 10);
+    r = await act('quoteCartAction', { items: [{ productId: prod.id, quantity: 2 }] }, ct);
+    check('CASHIER ขอตัวอย่างราคาได้ (คิดจากราคาใน DB)', r.text.includes('"total":"100.00"'), r.text.slice(0, 160));
+    r = await act('quoteCartAction', { items: [{ productId: prod.id, quantity: 2 }] }, undefined);
+    check('ไม่ล็อกอิน quoteCartAction → ไม่สำเร็จ', !r.text.includes('"ok":true'));
     // แก้ราคาใน payload (ฟิลด์เกิน) ต้องไม่มีผล
     const key = uuid();
-    r = await act('checkoutCashAction', { idempotencyKey: key, items: [{ productId: prod.id, quantity: 2, price: '0.01', unitPrice: '0.01' }], amountPaid: '1000', total: '0.02' }, at);
+    r = await act('checkoutCashAction', { idempotencyKey: key, items: [{ productId: prod.id, quantity: 2, price: '0.01', unitPrice: '0.01' }], amountPaid: '1000', total: '0.02', expectedTotal: '100.00' }, at);
     const adminSale = saleIdOf(r.text);
     const s1 = adminSale && await db.sale.findUnique({ where: { id: adminSale } });
     check('ADMIN checkout สำเร็จ ยอดคิดจากราคาใน DB (ไม่เชื่อ payload)', !!s1 && s1.total.toFixed(2) === '100.00' && s1.changeAmount.toFixed(2) === '900.00' && (await stockNow()) === 8, s1 ? s1.total.toFixed(2) : r.text.slice(0, 120));
-    r = await act('checkoutCashAction', { idempotencyKey: key, items: [{ productId: prod.id, quantity: 2 }], amountPaid: '1000' }, at);
+    r = await act('checkoutCashAction', { idempotencyKey: key, items: [{ productId: prod.id, quantity: 2 }], amountPaid: '1000', expectedTotal: '100.00' }, at);
     check('ส่ง key เดิมซ้ำ → ได้บิลเดิม ไม่ตัดสต็อกซ้ำ', saleIdOf(r.text) === adminSale && (await stockNow()) === 8);
-    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '1' }, ct);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '1', expectedTotal: '50.00' }, ct);
     check('รับเงินไม่พอ → ปฏิเสธ', r.text.includes('รับเงินไม่พอ') && (await stockNow()) === 8);
-    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 99 }], amountPaid: '99999' }, ct);
+    // ยอดที่ถูกต้องของ 99 ชิ้น (อาจมีโปรโมชั่นทั้งบิลจริงใน DB) ขอจากเซิร์ฟเวอร์ แล้วค่อยลองขายเกินสต็อก
+    const q99 = await act('quoteCartAction', { items: [{ productId: prod.id, quantity: 99 }] }, ct);
+    const total99 = (q99.text.match(/"total":"(\d+\.\d\d)"/) || [])[1];
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 99 }], amountPaid: '99999', expectedTotal: total99 }, ct);
     check('สต็อกไม่พอ → ปฏิเสธ ไม่ตัดสต็อก', r.text.includes('สต็อกไม่พอ') && (await stockNow()) === 8);
-    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: -1 }], amountPaid: '100' }, ct);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: -1 }], amountPaid: '100', expectedTotal: '50.00' }, ct);
     check('จำนวนติดลบ → ปฏิเสธ', !r.text.includes('"ok":true') && (await stockNow()) === 8);
-    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '60' }, ct);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '60', expectedTotal: '50.00' }, ct);
     const cashierSale = saleIdOf(r.text);
     check('CASHIER checkout สำเร็จ', !!cashierSale && (await stockNow()) === 7);
     const rc = (id, t) => body('/receipt/' + id, t);
@@ -151,6 +165,7 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
     await db.sale.deleteMany({ where: { id: { in: saleIds } } });
     await db.productBatch.deleteMany({ where: { productId: prod.id } });
     await db.product.delete({ where: { id: prod.id } });
+    await db.category.delete({ where: { id: cat.id } });
   }
 }
 
@@ -178,6 +193,26 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
   check("CASHIER เรียก resolveReviewAction → ปฏิเสธ", a.text.includes("ไม่มีสิทธิ์"));
   check("/pos แสดงตัวเลือก PromptPay QR", (await body("/pos", ct)).length > 0);
   check("/sales/[id] ของบิลที่ไม่มี → 404", (await body("/sales/00000000-0000-4000-8000-000000000000", at)).includes("NEXT_HTTP_ERROR_FALLBACK;404"));
+}
+
+// 4f) โปรโมชั่น / สมาชิก
+{
+  const z = '00000000-0000-4000-8000-000000000000';
+  for (const p of ['/promotions', '/members', '/members/' + z]) check('CASHIER เข้า ' + p + ' → redirect ไม่รั่วข้อมูล', (await body(p, ct)).includes('NEXT_REDIRECT'));
+  check('ADMIN เข้า /promotions เห็นโปรโมชั่น', (await body('/promotions', at)).includes('โปรโมชั่น'));
+  check('ADMIN เข้า /members เห็นสมาชิก seed', (await body('/members', at)).includes('M0001'));
+  check('/members/[id] ที่ไม่มี → 404', (await body('/members/' + z, at)).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
+  const promo = { name: 'x', scope: 'BILL', discountType: 'PERCENT', value: '10', productId: '', categoryId: '', minPurchase: '', startsAt: '2026-01-01T00:00', endsAt: '2026-12-31T00:00' };
+  a = await act('createPromotionAction', promo, ct); check('CASHIER createPromotionAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+  a = await act('setPromotionActiveAction', { id: z, isActive: false }, ct); check('CASHIER setPromotionActiveAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+  a = await act('createMemberAction', { name: 'x', phone: '0899999999', email: '' }, ct); check('CASHIER createMemberAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+  a = await act('setMemberActiveAction', { id: z, isActive: false }, ct); check('CASHIER setMemberActiveAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+  a = await act('createPromotionAction', { ...promo, value: '150' }, at); check('ADMIN สร้างโปร % เกิน 100 → ปฏิเสธ (Zod)', a.text.includes('ไม่เกิน 100'));
+  a = await act('createMemberAction', { name: 'x', phone: '123', email: '' }, at); check('ADMIN สร้างสมาชิกเบอร์ผิดรูปแบบ → ปฏิเสธ', a.text.includes('เบอร์โทร'));
+  a = await act('searchMembersAction', { q: 'ส' }, ct); check('ค้นหาสมาชิกคำสั้นเกิน → ไม่ได้ผลลัพธ์', a.text.includes('"ok":true') && a.text.includes('[]'));
+  a = await act('searchMembersAction', { q: 'M000' }, ct);
+  check('CASHIER ค้นหาสมาชิกที่ POS ได้ และไม่เห็นเบอร์เต็ม/อีเมล', a.text.includes('M0001') && !/"phone":/.test(a.text) && !/0810000001/.test(a.text) && !a.text.includes('email'));
+  a = await act('searchMembersAction', { q: 'M000' }, undefined); check('ไม่ล็อกอิน searchMembersAction → ไม่สำเร็จ', !a.text.includes('M0001'));
 }
 
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit

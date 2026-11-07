@@ -9,41 +9,12 @@ import type { CurrentUser } from "@/server/auth/guard";
 import { _setProviderForTests } from "@/server/payments/registry";
 import { getPaymentConfig } from "@/server/payments/config";
 import { createOpnProvider } from "@/server/payments/opn";
-import { ProviderError, type CreatePromptPayInput, type PaymentProvider, type ProviderCharge } from "@/server/payments/types";
+import type { ProviderCharge } from "@/server/payments/types";
+import { FakeProvider } from "./helpers/fake-provider";
+import { _setPromotionLoaderForTests } from "@/server/services/promotions";
 import { cancelQrPayment, getQrStatus, handleProviderWebhook, reconcilePayment, resolveReviewSale, startQrPayment, type WebhookResult } from "@/server/services/payments";
 import { receiveBatch } from "@/server/services/stock";
 import { checkoutCash } from "@/server/services/checkout";
-
-class FakeProvider implements PaymentProvider {
-  name = "fake";
-  livemode = false;
-  charges = new Map<string, ProviderCharge>();
-  byKey = new Map<string, string>();
-  createCalls = 0;
-  failCreate = false;
-  async createPromptPayCharge(i: CreatePromptPayInput) {
-    this.createCalls++;
-    if (this.failCreate) throw new ProviderError("boom");
-    const existing = this.byKey.get(i.idempotencyKey);
-    if (existing) return { ...this.charges.get(existing)! };
-    const id = `chrg_test_${randomBytes(8).toString("hex")}`;
-    const c: ProviderCharge = { id, status: "pending", paid: false, amountSatang: i.amountSatang, currency: "THB", livemode: false, expiresAt: i.expiresAt, qrImageUrl: `https://example.test/qr/${id}.png`, failureCode: null, metadata: { ...i.metadata } };
-    this.charges.set(id, c);
-    this.byKey.set(i.idempotencyKey, id);
-    return { ...c };
-  }
-  async retrieveCharge(id: string) {
-    const c = this.charges.get(id);
-    if (!c) throw new ProviderError("not found");
-    return { ...c };
-  }
-  verifyWebhookSignature(_raw: string, headers: Headers) {
-    return headers.get("x-bad") ? { checked: true, valid: false, reason: "bad" } : { checked: true, valid: true };
-  }
-  pay(id: string) { Object.assign(this.charges.get(id)!, { status: "successful", paid: true }); }
-  fail(id: string) { Object.assign(this.charges.get(id)!, { status: "failed", paid: false, failureCode: "insufficient_fund" }); }
-  expire(id: string) { Object.assign(this.charges.get(id)!, { status: "expired", paid: false }); }
-}
 
 const TAG = `ZZPAY${Date.now().toString(36).toUpperCase()}`;
 const fake = new FakeProvider();
@@ -78,10 +49,12 @@ beforeAll(async () => {
   cashier = { id: c.id, email: c.email, name: c.name, role: c.role };
   catId = (await db.category.create({ data: { name: `${TAG} หมวด` } })).id;
   _setProviderForTests(fake);
+  _setPromotionLoaderForTests(async () => []); // ตรวจยอดเงินแน่นอน ไม่ปนกับโปรโมชั่นจริงใน DB
 });
 
 afterAll(async () => {
   _setProviderForTests(null);
+  _setPromotionLoaderForTests(null);
   const ids = (await db.product.findMany({ where: { sku: { startsWith: TAG } }, select: { id: true } })).map((p) => p.id);
   const saleIds = (await db.saleItem.findMany({ where: { productId: { in: ids } }, select: { saleId: true } })).map((s) => s.saleId);
   const payIds = (await db.payment.findMany({ where: { saleId: { in: saleIds } }, select: { id: true } })).map((p) => p.id);

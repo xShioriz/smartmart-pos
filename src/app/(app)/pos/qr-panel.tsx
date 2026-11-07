@@ -15,6 +15,8 @@ const POLL_MS = 2500;
 
 type Props = {
   items: { productId: string; quantity: number }[];
+  memberId: string | null;
+  expectedTotal: string | null; // ยอดที่เห็นบนหน้าจอ (null = ยังไม่พร้อม)
   totalLabel: string;
   initial: QrState | null; // กรณีกลับมาทำรายการที่ค้าง
   getKey: () => string;
@@ -28,7 +30,7 @@ const mmss = (ms: number) => {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 };
 
-export function QrPanel({ items, totalLabel, initial, getKey, renewKey, onCompleted, onLockChange }: Props) {
+export function QrPanel({ items, memberId, expectedTotal, totalLabel, initial, getKey, renewKey, onCompleted, onLockChange }: Props) {
   const [qr, setQr] = useState<QrState | null>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +79,8 @@ export function QrPanel({ items, totalLabel, initial, getKey, renewKey, onComple
 
   async function create() {
     setBusy(true); setError(null);
-    const s = unwrap(await startQrPaymentAction({ idempotencyKey: getKey(), items }));
+    if (!expectedTotal) { setBusy(false); setError("ยังคำนวณราคาไม่เสร็จ กรุณาลองอีกครั้ง"); return; }
+    const s = unwrap(await startQrPaymentAction({ idempotencyKey: getKey(), items, memberId, expectedTotal }));
     setBusy(false);
     if (s) apply(s);
   }

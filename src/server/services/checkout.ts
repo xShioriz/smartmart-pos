@@ -7,16 +7,26 @@ import { toBangkokDateKey } from "@/lib/date";
 import { BusinessError } from "@/lib/result";
 import type { CurrentUser } from "@/server/auth/guard";
 import { uniqueViolationFields } from "@/server/prisma-errors";
-import { calculateCart } from "./pricing";
+import { calculateCart, type PricedCart } from "./pricing";
+import { loadActivePromotions } from "./promotions";
+import { assertMemberUsable, awardPoints } from "./members";
 import { consumeFefo } from "./stock";
 
 export type CheckoutInput = {
   idempotencyKey: string;
   items: { productId: string; quantity: number }[];
   amountPaid: string; // สตริงเงิน (ตรวจรูปแบบแล้วที่ Zod)
+  memberId?: string | null;
+  expectedTotal?: string | null; // ยอดที่ลูกค้า/แคชเชียร์เห็นบนหน้าจอ — ไม่ตรงกับที่คำนวณจริง = ปฏิเสธ (ไม่ใช่การเชื่อยอดจาก client)
 };
 
-export type CheckoutResult = { saleId: string; receiptNo: string; total: string; amountPaid: string; change: string; replayed: boolean };
+export type CheckoutResult = { saleId: string; receiptNo: string; total: string; amountPaid: string; change: string; pointsEarned: number; replayed: boolean };
+
+export class PriceChangedError extends BusinessError {
+  constructor(public newTotal: string) {
+    super(`ราคาหรือโปรโมชั่นเปลี่ยนแปลง ยอดใหม่ ${newTotal} บาท กรุณาตรวจสอบตะกร้าอีกครั้ง`);
+  }
+}
 
 export const MAX_LINE_QTY = 9999;
 export const MAX_LINES = 100;
@@ -46,12 +56,26 @@ export async function loadSellableProducts(tx: Prisma.TransactionClient, merged:
   return byId;
 }
 
+/** ราคาของบิลจาก DB ทั้งหมด: สินค้า + โปรโมชั่นที่ใช้งานอยู่ ณ ตอนนี้; ถ้ามี expectedTotal ต้องตรงกับยอดที่คำนวณได้ */
+export async function priceMerged(tx: Prisma.TransactionClient, merged: { productId: string; quantity: number }[], opts: { expectedTotal?: string | null; now?: Date } = {}) {
+  const now = opts.now ?? new Date();
+  const byId = await loadSellableProducts(tx, merged);
+  const promos = await loadActivePromotions(tx, now);
+  const cart: PricedCart = calculateCart(
+    merged.map((m) => ({ productId: m.productId, categoryId: byId.get(m.productId)!.categoryId, unitPrice: byId.get(m.productId)!.price, quantity: m.quantity })),
+    promos,
+    now,
+  );
+  if (opts.expectedTotal != null && !round2(opts.expectedTotal).equals(cart.total)) throw new PriceChangedError(cart.total.toFixed(2));
+  return { byId, cart };
+}
+
 async function findExisting(idempotencyKey: string, actor: CurrentUser): Promise<CheckoutResult | null> {
   const sale = await db.sale.findUnique({ where: { idempotencyKey } });
   if (!sale) return null;
   if (sale.cashierId !== actor.id) throw new BusinessError("รหัสคำขอนี้ถูกใช้แล้ว");
   if (sale.status !== "COMPLETED" || !sale.receiptNo) throw new BusinessError("รายการนี้ยังไม่เสร็จสมบูรณ์");
-  return { saleId: sale.id, receiptNo: sale.receiptNo, total: sale.total.toFixed(2), amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2), replayed: true };
+  return { saleId: sale.id, receiptNo: sale.receiptNo, total: sale.total.toFixed(2), amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2), pointsEarned: sale.pointsEarned, replayed: true };
 }
 
 export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Promise<CheckoutResult> {
@@ -63,11 +87,11 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
   try {
     const result = await db.$transaction(
       async (tx) => {
-        // 1) สินค้า + ราคาจาก DB เท่านั้น
-        const byId = await loadSellableProducts(tx, merged);
+        // 1) สินค้า + ราคา + โปรโมชั่นจาก DB เท่านั้น; สมาชิกต้องมีอยู่และใช้งานอยู่
+        if (input.memberId) await assertMemberUsable(tx, input.memberId);
+        const { byId, cart } = await priceMerged(tx, merged, { expectedTotal: input.expectedTotal });
 
-        // 2) คำนวณยอดจากราคาใน DB
-        const cart = calculateCart(merged.map((m) => ({ productId: m.productId, unitPrice: byId.get(m.productId)!.price, quantity: m.quantity })));
+        // 2) ตรวจเงินที่รับ
         const paid = round2(input.amountPaid);
         if (paid.lt(cart.total)) throw new BusinessError(`รับเงินไม่พอ (ยอดรวม ${cart.total.toFixed(2)} บาท)`);
         const change = paid.sub(cart.total);
@@ -80,6 +104,10 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
             status: "PENDING_PAYMENT",
             subtotal: cart.subtotal,
             discountTotal: cart.discountTotal,
+            billDiscount: cart.billDiscount,
+            billPromotionId: cart.billPromotion?.id ?? null,
+            billPromotionName: cart.billPromotion?.name ?? null,
+            memberId: input.memberId ?? null,
             total: cart.total,
             paymentMethod: "CASH",
             amountPaid: D(0),
@@ -98,6 +126,8 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
               productId: p.id,
               skuSnapshot: p.sku,
               nameSnapshot: p.name,
+              promotionId: line.promotion?.id ?? null,
+              promotionName: line.promotion?.name ?? null,
               unitPrice: line.unitPrice,
               unitCost: round2(costSum.div(line.quantity)),
               quantity: line.quantity,
@@ -116,7 +146,10 @@ export async function checkoutCash(actor: CurrentUser, input: CheckoutInput): Pr
         const receiptNo = `SM-${toBangkokDateKey(sale.createdAt).replaceAll("-", "")}-${String(sale.saleNo).padStart(5, "0")}`;
         await tx.sale.update({ where: { id: sale.id }, data: { status: "COMPLETED", receiptNo, amountPaid: paid, changeAmount: change } });
 
-        return { saleId: sale.id, receiptNo, total: cart.total.toFixed(2), amountPaid: paid.toFixed(2), change: change.toFixed(2), replayed: false } satisfies CheckoutResult;
+        // 6) ให้แต้มสมาชิก (ใน transaction เดียวกัน — ถ้าล้มเหลวทั้งบิล rollback)
+        const pointsEarned = await awardPoints(tx, sale.id);
+
+        return { saleId: sale.id, receiptNo, total: cart.total.toFixed(2), amountPaid: paid.toFixed(2), change: change.toFixed(2), pointsEarned, replayed: false } satisfies CheckoutResult;
       },
       { timeout: 20_000, maxWait: 10_000 },
     );

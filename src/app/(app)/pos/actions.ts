@@ -4,7 +4,9 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAction } from "@/server/auth/guard";
 import { runAction } from "@/server/action";
-import { checkoutCashSchema, paymentIdSchema, startQrSchema } from "@/lib/validators/checkout";
+import { checkoutCashSchema, memberSearchSchema, paymentIdSchema, quoteSchema, startQrSchema } from "@/lib/validators/checkout";
+import { quoteCart } from "@/server/services/quote";
+import { searchMembersForPos } from "@/server/services/members";
 import { checkoutCash } from "@/server/services/checkout";
 import { syncNotifications } from "@/server/services/notifications";
 import { cancelQrPayment, getQrStatus, startQrPayment } from "@/server/services/payments";
@@ -21,7 +23,7 @@ export async function checkoutCashAction(input: unknown) {
       revalidatePath("/inventory", "layout");
       revalidatePath("/sales");
     }
-    return { saleId: result.saleId, receiptNo: result.receiptNo, change: result.change };
+    return { saleId: result.saleId, receiptNo: result.receiptNo, change: result.change, pointsEarned: result.pointsEarned };
   });
 }
 
@@ -49,5 +51,19 @@ export async function cancelQrPaymentAction(input: unknown) {
   return runAction(async () => {
     const actor = await requireAction(["ADMIN", "CASHIER"]);
     return cancelQrPayment(actor, paymentIdSchema.parse(input).paymentId);
+  });
+}
+
+export async function quoteCartAction(input: unknown) {
+  return runAction(async () => {
+    await requireAction(["ADMIN", "CASHIER"]);
+    return quoteCart(quoteSchema.parse(input));
+  });
+}
+
+export async function searchMembersAction(input: unknown) {
+  return runAction(async () => {
+    await requireAction(["ADMIN", "CASHIER"]);
+    return searchMembersForPos(memberSearchSchema.parse(input).q);
   });
 }

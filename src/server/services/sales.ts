@@ -15,7 +15,7 @@ export async function getStoreInfo() {
 export async function getReceipt(id: string, viewer: CurrentUser) {
   const sale = await db.sale.findUnique({
     where: { id },
-    include: { items: { orderBy: { nameSnapshot: "asc" } }, cashier: { select: { name: true } }, payment: true },
+    include: { items: { orderBy: { nameSnapshot: "asc" } }, cashier: { select: { name: true } }, payment: true, member: { select: { code: true, name: true } }, pointTransactions: { where: { type: "EARN" }, select: { balanceAfter: true } } },
   });
   if (!sale || !sale.receiptNo) return null;
   if (viewer.role !== "ADMIN" && sale.cashierId !== viewer.id) return null;
@@ -24,9 +24,10 @@ export async function getReceipt(id: string, viewer: CurrentUser) {
     store,
     sale: {
       id: sale.id, receiptNo: sale.receiptNo, createdAt: sale.createdAt.toISOString(), status: sale.status, cashier: sale.cashier.name,
-      paymentMethod: sale.paymentMethod, paymentEnv: sale.payment?.environment ?? null, subtotal: sale.subtotal.toFixed(2), discountTotal: sale.discountTotal.toFixed(2), total: sale.total.toFixed(2),
+      paymentMethod: sale.paymentMethod, paymentEnv: sale.payment?.environment ?? null, subtotal: sale.subtotal.toFixed(2), discountTotal: sale.discountTotal.toFixed(2), billDiscount: sale.billDiscount.toFixed(2), billPromotionName: sale.billPromotionName, total: sale.total.toFixed(2),
       amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2),
-      items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2), discount: i.discountAmount.toFixed(2), net: i.netTotal.toFixed(2) })),
+      member: sale.member ? { code: sale.member.code, name: sale.member.name, pointsEarned: sale.pointsEarned, balanceAfter: sale.pointTransactions[0]?.balanceAfter ?? null } : null,
+      items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2), discount: i.discountAmount.toFixed(2), net: i.netTotal.toFixed(2), promotionName: i.promotionName })),
     },
   };
 }
@@ -62,7 +63,7 @@ export async function listSales(f: SalesFilter, viewer: CurrentUser) {
 export async function getSaleDetail(id: string, viewer: CurrentUser) {
   const sale = await db.sale.findUnique({
     where: { id },
-    include: { items: { orderBy: { nameSnapshot: "asc" } }, cashier: { select: { name: true } }, payment: true },
+    include: { items: { orderBy: { nameSnapshot: "asc" } }, cashier: { select: { name: true } }, payment: true, member: { select: { id: true, code: true, name: true } } },
   });
   if (!sale) return null;
   if (viewer.role !== "ADMIN" && sale.cashierId !== viewer.id) return null;
@@ -71,11 +72,13 @@ export async function getSaleDetail(id: string, viewer: CurrentUser) {
     id: sale.id, receiptNo: sale.receiptNo, status: sale.status, createdAt: sale.createdAt.toISOString(), cashier: sale.cashier.name,
     paymentMethod: sale.paymentMethod, subtotal: sale.subtotal.toFixed(2), discountTotal: sale.discountTotal.toFixed(2), total: sale.total.toFixed(2),
     amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2),
+    billDiscount: sale.billDiscount.toFixed(2), billPromotionName: sale.billPromotionName, pointsEarned: sale.pointsEarned,
+    member: sale.member,
     payment: pay && {
       status: pay.status, environment: pay.environment, provider: pay.provider, amount: pay.amount.toFixed(2),
       chargeRef: pay.providerChargeId ? `…${pay.providerChargeId.slice(-8)}` : null,
       paidAt: pay.paidAt?.toISOString() ?? null, confirmedVia: pay.confirmedVia, failureReason: pay.failureReason,
     },
-    items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2) })),
+    items: sale.items.map((i) => ({ id: i.id, name: i.nameSnapshot, sku: i.skuSnapshot, quantity: i.quantity, unitPrice: i.unitPrice.toFixed(2), lineTotal: i.lineTotal.toFixed(2), discount: i.discountAmount.toFixed(2), net: i.netTotal.toFixed(2), promotionName: i.promotionName })),
   };
 }

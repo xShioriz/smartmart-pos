@@ -228,6 +228,7 @@ model Promotion {
   product   Product?   @relation(fields: [productId], references: [id], onDelete: Restrict)
   category  Category?  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   saleItems SaleItem[]
+  billSales Sale[]     @relation("SaleBillPromotion")
 
   @@index([isActive, startsAt, endsAt])
 }
@@ -241,7 +242,10 @@ model Sale {
   memberId       String?       @db.Uuid
   status         SaleStatus    @default(COMPLETED)
   subtotal       Decimal       @db.Decimal(12, 2) // ก่อนส่วนลด
-  discountTotal  Decimal       @default(0) @db.Decimal(12, 2)
+  discountTotal  Decimal       @default(0) @db.Decimal(12, 2) // รวมส่วนลดรายการ + ส่วนลดทั้งบิล
+  billDiscount   Decimal       @default(0) @db.Decimal(12, 2) // เฉพาะส่วนลดทั้งบิล (ส่วนหนึ่งของ discountTotal)
+  billPromotionId   String?    @db.Uuid
+  billPromotionName String?    // snapshot ชื่อโปร ณ ตอนขาย
   total          Decimal       @db.Decimal(12, 2) // subtotal - discountTotal
   paymentMethod  PaymentMethod
   amountPaid     Decimal       @default(0) @db.Decimal(12, 2)
@@ -252,6 +256,7 @@ model Sale {
 
   cashier           User               @relation(fields: [cashierId], references: [id], onDelete: Restrict)
   member            Member?            @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  billPromotion     Promotion?         @relation("SaleBillPromotion", fields: [billPromotionId], references: [id], onDelete: Restrict)
   payment           Payment?
   items             SaleItem[]
   stockMovements    StockMovement[]
@@ -262,6 +267,7 @@ model Sale {
   @@index([cashierId])
   @@index([memberId])
   @@index([status])
+  @@index([billPromotionId])
 }
 
 model Payment {
@@ -309,6 +315,7 @@ model SaleItem {
   saleId         String  @db.Uuid
   productId      String  @db.Uuid
   promotionId    String? @db.Uuid
+  promotionName  String? // snapshot ชื่อโปรรายการ ณ ตอนขาย
   skuSnapshot    String
   nameSnapshot   String
   unitPrice      Decimal @db.Decimal(12, 2)

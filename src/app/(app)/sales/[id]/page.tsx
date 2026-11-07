@@ -46,18 +46,20 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
         <section className="overflow-x-auto rounded-xl border bg-card lg:col-span-2">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50"><TableHead>สินค้า</TableHead><TableHead className="text-right">จำนวน</TableHead><TableHead className="text-right">ราคา/หน่วย</TableHead><TableHead className="text-right">รวม</TableHead></TableRow>
+              <TableRow className="bg-muted/50"><TableHead>สินค้า</TableHead><TableHead className="text-right">จำนวน</TableHead><TableHead className="text-right">ราคา/หน่วย</TableHead><TableHead className="text-right">ส่วนลด</TableHead><TableHead className="text-right">สุทธิ</TableHead></TableRow>
             </TableHeader>
             <TableBody>
               {sale.items.map((i) => (
                 <TableRow key={i.id}>
-                  <TableCell><div className="font-medium">{i.name}</div><div className="font-mono text-xs text-muted-foreground">{i.sku}</div></TableCell>
+                  <TableCell><div className="font-medium">{i.name}</div><div className="font-mono text-xs text-muted-foreground">{i.sku}</div>{i.promotionName && <div className="text-xs text-green-700">{i.promotionName}</div>}</TableCell>
                   <TableCell className="text-right tabular-nums">{i.quantity}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(i.unitPrice)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatMoney(i.lineTotal)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{Number(i.discount) > 0 ? `-${formatMoney(i.discount)}` : "-"}</TableCell>
+                  <TableCell className="text-right tabular-nums">{formatMoney(i.net)}</TableCell>
                 </TableRow>
               ))}
-              <TableRow><TableCell colSpan={3} className="text-right font-semibold">ยอดสุทธิ</TableCell><TableCell className="text-right text-base font-bold tabular-nums">{formatMoney(sale.total)}</TableCell></TableRow>
+              {Number(sale.billDiscount) > 0 && <TableRow><TableCell colSpan={4} className="text-right text-sm text-muted-foreground">รวมส่วนลดทั้งบิลที่กระจายในรายการข้างต้น{sale.billPromotionName ? ` (${sale.billPromotionName})` : ""}</TableCell><TableCell className="text-right tabular-nums">-{formatMoney(sale.billDiscount)}</TableCell></TableRow>}
+              <TableRow><TableCell colSpan={4} className="text-right font-semibold">ยอดสุทธิ</TableCell><TableCell className="text-right text-base font-bold tabular-nums">{formatMoney(sale.total)}</TableCell></TableRow>
             </TableBody>
           </Table>
         </section>
@@ -65,6 +67,8 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
         <aside className="space-y-2 rounded-xl border bg-card p-4 text-sm">
           <h2 className="mb-2 font-semibold">การชำระเงิน</h2>
           <Row k="วิธีชำระ" v={METHOD[sale.paymentMethod] ?? sale.paymentMethod} />
+          {sale.member && <Row k="สมาชิก" v={`${sale.member.code} ${sale.member.name}`} />}
+          {sale.member && <Row k="แต้มที่ได้" v={String(sale.pointsEarned)} />}
           {pay ? (
             <>
               <Row k="สถานะ" v={PAY_STATUS[pay.status] ?? pay.status} />

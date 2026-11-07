@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ShoppingCart } from "lucide-react";
@@ -42,6 +43,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <div className="flex justify-between gap-2"><dt>เลขที่</dt><dd>{sale.receiptNo}</dd></div>
           <div className="flex justify-between gap-2"><dt>วันที่</dt><dd>{formatDateTime(new Date(sale.createdAt))}</dd></div>
           <div className="flex justify-between gap-2"><dt>พนักงาน</dt><dd>{sale.cashier}</dd></div>
+          {sale.member && <div className="flex justify-between gap-2"><dt>สมาชิก</dt><dd>{sale.member.code} {sale.member.name}</dd></div>}
         </dl>
         <div className="my-2 border-t border-dashed border-black" />
         <table className="w-full">
@@ -50,12 +52,20 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           </thead>
           <tbody>
             {sale.items.map((i) => (
-              <tr key={i.id} className="align-top">
-                <td className="max-w-[28mm] break-words pr-1">{i.name}</td>
-                <td className="text-right tabular-nums">{i.quantity}</td>
-                <td className="text-right tabular-nums">{i.unitPrice}</td>
-                <td className="text-right tabular-nums">{i.lineTotal}</td>
-              </tr>
+              <Fragment key={i.id}>
+                <tr className="align-top">
+                  <td className="max-w-[28mm] break-words pr-1">{i.name}</td>
+                  <td className="text-right tabular-nums">{i.quantity}</td>
+                  <td className="text-right tabular-nums">{i.unitPrice}</td>
+                  <td className="text-right tabular-nums">{i.lineTotal}</td>
+                </tr>
+                {Number(i.discount) > 0 && (
+                  <tr className="align-top text-[11px]">
+                    <td colSpan={3} className="pl-2">ส่วนลด{i.promotionName ? ` (${i.promotionName})` : ""}</td>
+                    <td className="text-right tabular-nums">-{i.discount}</td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>
@@ -64,7 +74,8 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           {hasDiscount && (
             <>
               <div className="flex justify-between"><dt>รวมก่อนลด</dt><dd className="tabular-nums">{formatMoney(sale.subtotal)}</dd></div>
-              <div className="flex justify-between"><dt>ส่วนลด</dt><dd className="tabular-nums">-{formatMoney(sale.discountTotal)}</dd></div>
+              <div className="flex justify-between"><dt>ส่วนลดรวม</dt><dd className="tabular-nums">-{formatMoney(sale.discountTotal)}</dd></div>
+              {Number(sale.billDiscount) > 0 && <div className="flex justify-between text-[11px]"><dt className="pl-2">ส่วนลดทั้งบิล{sale.billPromotionName ? ` (${sale.billPromotionName})` : ""}</dt><dd className="tabular-nums">-{formatMoney(sale.billDiscount)}</dd></div>}
             </>
           )}
           <div className="flex justify-between text-sm font-bold"><dt>ยอดสุทธิ</dt><dd className="tabular-nums">{formatMoney(sale.total)}</dd></div>
@@ -72,6 +83,9 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <div className="flex justify-between"><dt>รับเงิน</dt><dd className="tabular-nums">{formatMoney(sale.amountPaid)}</dd></div>
           <div className="flex justify-between"><dt>เงินทอน</dt><dd className="tabular-nums">{formatMoney(sale.change)}</dd></div>
         </dl>
+        {sale.member && sale.member.pointsEarned > 0 && (
+          <p className="mt-2 text-center">ได้รับแต้มครั้งนี้ {sale.member.pointsEarned} แต้ม{sale.member.balanceAfter !== null ? ` (สะสม ${sale.member.balanceAfter})` : ""}</p>
+        )}
         {sale.paymentEnv === "SANDBOX" && sale.paymentMethod !== "CASH" && (
           <p className="mt-2 border border-dashed border-black p-1 text-center font-bold">*** SANDBOX — โหมดทดสอบ ไม่ใช่เงินจริง ***</p>
         )}

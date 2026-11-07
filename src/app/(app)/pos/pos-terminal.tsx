@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, Loader2, Minus, Plus, QrCode, Search, ShoppingCart, Trash2, X } from "lucide-react";
+import { Banknote, Loader2, Minus, Plus, QrCode, Search, ShoppingCart, Star, Tag, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,9 @@ import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
 import type { PosProduct } from "@/server/services/pos";
 import type { QrState } from "@/server/services/payments";
-import { checkoutCashAction, getQrStatusAction } from "./actions";
+import type { Quote } from "@/server/services/quote";
+import { checkoutCashAction, getQrStatusAction, quoteCartAction } from "./actions";
+import { MemberPicker, type PickedMember } from "./member-picker";
 import { QR_STORAGE_KEY, QrPanel } from "./qr-panel";
 
 type CartLine = { productId: string; qty: number };
@@ -25,6 +27,7 @@ type Action =
 
 const MAX_QTY = 9999;
 const STORAGE_KEY = "smartmart.cart.v1";
+const MEMBER_KEY = "smartmart.member.v1";
 
 function reducer(state: CartLine[], a: Action): CartLine[] {
   switch (a.type) {
@@ -63,6 +66,10 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
   const [pending, start] = useTransition();
   const searchRef = useRef<HTMLInputElement>(null);
   const idemKey = useRef<string | null>(null);
+  const [member, setMember] = useReducer((_: PickedMember | null, next: PickedMember | null) => next, null);
+  // ตัวอย่างราคาจากเซิร์ฟเวอร์ (โปรโมชั่น/ส่วนลดคิดฝั่งเซิร์ฟเวอร์เท่านั้น) — key = ตะกร้า+สมาชิกที่ใช้คำนวณ
+  const [quote, setQuote] = useState<{ key: string; data: Quote | null; error: string | null } | null>(null);
+  const quoteSeq = useRef(0);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -88,6 +95,27 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)); } catch { /* ignore */ }
     idemKey.current = null; // ตะกร้าเปลี่ยน = คำขอใหม่
   }, [cart]);
+
+  useEffect(() => {
+    try { const raw = localStorage.getItem(MEMBER_KEY); if (raw) setMember(JSON.parse(raw)); } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    try { if (member) localStorage.setItem(MEMBER_KEY, JSON.stringify(member)); else localStorage.removeItem(MEMBER_KEY); } catch { /* ignore */ }
+    idemKey.current = null; // เปลี่ยนสมาชิก = คำขอใหม่
+  }, [member]);
+
+  const cartKey = JSON.stringify([cart.map((l) => [l.productId, l.qty]), member?.id ?? null]);
+  useEffect(() => {
+    if (!hydrated.current || cart.length === 0) return;
+    const my = ++quoteSeq.current;
+    const t = setTimeout(async () => {
+      const res = await quoteCartAction({ items: cart.map((l) => ({ productId: l.productId, quantity: l.qty })), memberId: member?.id ?? null });
+      if (my !== quoteSeq.current) return; // ทิ้งผลของตะกร้าที่เก่ากว่า
+      setQuote({ key: cartKey, data: res.ok ? res.data : null, error: res.ok ? null : res.error });
+    }, 200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartKey]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -131,7 +159,11 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
   }
 
   const lines = cart.map((l) => ({ ...l, p: byId.get(l.productId)! })).filter((l) => l.p);
-  const totalSatang = lines.reduce((s, l) => s + satang(l.p.price) * l.qty, 0);
+  const grossSatang = lines.reduce((s, l) => s + satang(l.p.price) * l.qty, 0);
+  const q = quote && quote.key === cartKey ? quote : null; // ตัวอย่างราคาที่ตรงกับตะกร้าปัจจุบัน
+  const quoteReady = !!q?.data && lines.length > 0;
+  const totalSatang = quoteReady ? Math.round(Number(q!.data!.total) * 100) : grossSatang;
+  const quoteLine = (id: string) => q?.data?.lines.find((l) => l.productId === id);
   const itemCount = lines.reduce((s, l) => s + l.qty, 0);
   const paidSatang = parseMoneyToSatang(paid);
   const enough = paidSatang !== null && paidSatang >= totalSatang;
@@ -143,7 +175,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
   }
 
   function confirmPay() {
-    if (!enough || paidSatang === null || !idemKey.current) return;
+    if (!quoteReady || !enough || paidSatang === null || !idemKey.current) return;
     setError(null);
     const key = idemKey.current;
     start(async () => {
@@ -151,14 +183,20 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
         idempotencyKey: key,
         items: lines.map((l) => ({ productId: l.productId, quantity: l.qty })),
         amountPaid: (paidSatang / 100).toFixed(2),
+        memberId: member?.id ?? null,
+        expectedTotal: q!.data!.total,
       });
       if (res.ok) {
-        toast.success(`ขายสำเร็จ เงินทอน ${formatMoney(res.data.change)}`);
+        toast.success(`ขายสำเร็จ เงินทอน ${formatMoney(res.data.change)}${res.data.pointsEarned ? ` · ได้ ${res.data.pointsEarned} แต้ม` : ""}`);
         dispatch({ type: "clear" });
+        setMember(null);
         setPayOpen(false);
         router.push(`/receipt/${res.data.saleId}`);
       } else {
         setError(res.error);
+        setQuote(null); // ราคา/โปรเปลี่ยน → บังคับคำนวณยอดใหม่ก่อนชำระอีกครั้ง
+        quoteSeq.current++;
+        setQuote({ key: "", data: null, error: null });
         router.refresh(); // รีเฟรชสต็อกล่าสุดเผื่อสาเหตุคือสต็อกไม่พอ
       }
     });
@@ -183,6 +221,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
   const renewQrKey = useCallback(() => { idemKey.current = crypto.randomUUID(); }, []);
   const onQrCompleted = useCallback((saleId: string) => {
     dispatch({ type: "clear" });
+    setMember(null);
     setPayOpen(false); setQrInitial(null);
     if (saleId) router.push(`/receipt/${saleId}`); else router.refresh();
   }, [router]);
@@ -243,6 +282,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
           <h2 className="flex items-center gap-2 font-semibold"><ShoppingCart className="size-4" /> ตะกร้า <span className="text-sm font-normal text-muted-foreground">({lines.length} รายการ / {itemCount} ชิ้น)</span></h2>
           {lines.length > 0 && <Button variant="ghost" size="sm" onClick={() => setClearOpen(true)}><Trash2 /> ล้าง</Button>}
         </div>
+        <div className="border-b p-3"><MemberPicker value={member} onChange={setMember} /></div>
         <div className="min-h-32 flex-1 overflow-y-auto">
           {lines.length === 0 ? (
             <div className="flex h-full min-h-40 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
@@ -254,7 +294,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
               {lines.map(({ p, qty }) => (
                 <li key={p.id} className="space-y-2 px-4 py-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0"><p className="truncate text-sm font-medium">{p.name}</p><p className="text-xs text-muted-foreground">{formatMoney(p.price)} / {p.unit}</p></div>
+                    <div className="min-w-0"><p className="truncate text-sm font-medium">{p.name}</p><p className="text-xs text-muted-foreground">{formatMoney(p.price)} / {p.unit}</p>{quoteLine(p.id)?.promotionName && <p className="mt-0.5 flex items-center gap-1 text-xs text-green-700"><Tag className="size-3" /> {quoteLine(p.id)!.promotionName}</p>}</div>
                     <button type="button" onClick={() => dispatch({ type: "remove", productId: p.id })} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive" aria-label={`ลบ ${p.name}`}><X className="size-4" /></button>
                   </div>
                   <div className="flex items-center justify-between">
@@ -269,7 +309,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
                       />
                       <Button size="icon-sm" variant="outline" onClick={() => setQty(p, qty + 1)} aria-label="เพิ่มจำนวน"><Plus /></Button>
                     </div>
-                    <span className="font-medium tabular-nums">{baht(satang(p.price) * qty)}</span>
+                    <span className="text-right tabular-nums">{Number(quoteLine(p.id)?.discount ?? 0) > 0 ? (<><span className="mr-1 text-xs text-muted-foreground line-through">{baht(satang(p.price) * qty)}</span><span className="font-medium">{formatMoney(quoteLine(p.id)!.lineTotal === quoteLine(p.id)!.net ? quoteLine(p.id)!.net : (Number(quoteLine(p.id)!.lineTotal) - Number(quoteLine(p.id)!.discount)).toFixed(2))}</span></>) : <span className="font-medium">{baht(satang(p.price) * qty)}</span>}</span>
                   </div>
                 </li>
               ))}
@@ -277,10 +317,18 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
           )}
         </div>
         <div className="space-y-3 border-t p-4">
-          <div className="flex items-baseline justify-between"><span className="text-sm text-muted-foreground">ยอดรวม (ก่อนส่วนลด)</span><span className="tabular-nums">{baht(totalSatang)}</span></div>
-          <div className="flex items-baseline justify-between"><span className="font-semibold">ยอดสุทธิ</span><span className="text-2xl font-bold text-primary tabular-nums">{baht(totalSatang)}</span></div>
-          <Button className="h-11 w-full text-base" disabled={!lines.length} onClick={openPay}>ชำระเงิน</Button>
-          <p className="text-center text-[11px] text-muted-foreground">ยอดจริงคำนวณจากราคาในระบบอีกครั้งตอนยืนยัน</p>
+          <div className="flex items-baseline justify-between"><span className="text-sm text-muted-foreground">ยอดรวม</span><span className="tabular-nums">{quoteReady ? formatMoney(q!.data!.subtotal) : baht(grossSatang)}</span></div>
+          {quoteReady && Number(q!.data!.itemDiscount) > 0 && (
+            <div className="flex items-baseline justify-between text-sm text-green-700"><span>ส่วนลดรายการ</span><span className="tabular-nums">-{formatMoney(q!.data!.itemDiscount)}</span></div>
+          )}
+          {quoteReady && Number(q!.data!.billDiscount) > 0 && (
+            <div className="flex items-baseline justify-between text-sm text-green-700"><span className="truncate pr-2">{q!.data!.billPromotionName ?? "ส่วนลดทั้งบิล"}</span><span className="tabular-nums">-{formatMoney(q!.data!.billDiscount)}</span></div>
+          )}
+          <div className="flex items-baseline justify-between"><span className="font-semibold">ยอดสุทธิ</span><span className="text-2xl font-bold text-primary tabular-nums">{lines.length && !quoteReady ? "…" : baht(totalSatang)}</span></div>
+          {quoteReady && member && q!.data!.points > 0 && <p className="flex items-center gap-1 text-xs text-green-800"><Star className="size-3" /> สมาชิกจะได้ {q!.data!.points} แต้มจากบิลนี้</p>}
+          {q?.error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{q.error}</p>}
+          <Button className="h-11 w-full text-base" disabled={!lines.length || !quoteReady} onClick={openPay}>{lines.length && !quoteReady && !q?.error ? <><Loader2 className="animate-spin" /> กำลังคำนวณราคา</> : "ชำระเงิน"}</Button>
+          <p className="text-center text-[11px] text-muted-foreground">ราคาและโปรโมชั่นคำนวณโดยเซิร์ฟเวอร์ และคำนวณซ้ำอีกครั้งตอนยืนยัน</p>
         </div>
       </aside>
 
@@ -301,6 +349,8 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
             <QrPanel
               key={qrInitial?.paymentId ?? "new"}
               items={lines.map((l) => ({ productId: l.productId, quantity: l.qty }))}
+              memberId={member?.id ?? null}
+              expectedTotal={q?.data?.total ?? null}
               totalLabel={baht(totalSatang)}
               initial={qrInitial}
               getKey={getQrKey}

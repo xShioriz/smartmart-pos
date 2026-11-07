@@ -36,3 +36,8 @@ export function formatDateTime(d: Date): string {
     calendar: "gregory",
   }).format(d);
 }
+
+/** ISO (UTC) → "yyyy-MM-ddTHH:mm" ตามเวลาไทย สำหรับ <input type="datetime-local"> */
+export function toBangkokInput(iso: string): string {
+  return new Date(new Date(iso).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 16);
+}

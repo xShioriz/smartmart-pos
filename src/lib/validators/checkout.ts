@@ -12,6 +12,11 @@ export const checkoutCashSchema = z.object({
     )
     .min(1, "ตะกร้าว่างเปล่า")
     .max(MAX_LINES, `รายการสินค้าเกิน ${MAX_LINES} รายการ`),
+  memberId: z.string().uuid("สมาชิกไม่ถูกต้อง").nullish().transform((x) => x ?? null),
+  expectedTotal: z
+    .union([z.string(), z.number()])
+    .transform((x) => String(x).trim())
+    .pipe(z.string().regex(/^\d{1,9}(\.\d{1,2})?$/, "ยอดรวมไม่ถูกต้อง")),
   amountPaid: z
     .union([z.string(), z.number()])
     .transform((v) => String(v).trim())
@@ -25,3 +30,9 @@ export const resolveReviewSchema = z.object({
   action: z.enum(["FULFILL", "REFUNDED"]),
   note: z.string().trim().min(1, "กรุณาระบุหมายเหตุ").max(200, "หมายเหตุยาวเกินไป"),
 });
+
+export const quoteSchema = z.object({
+  items: checkoutCashSchema.shape.items,
+  memberId: checkoutCashSchema.shape.memberId,
+});
+export const memberSearchSchema = z.object({ q: z.string().trim().max(60) });
