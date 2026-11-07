@@ -49,3 +49,15 @@
 - ค้นหา/กรอง/แบ่งหน้าเป็นฟอร์ม GET + searchParams (ทำงานไม่ต้องพึ่ง JS); กรอง "ใกล้หมด" เลื่อนไปหน้าคลังสินค้า (Prisma เทียบคอลัมน์กับคอลัมน์ไม่ได้)
 - เทสต์: vitest integration ต่อ DB dev (`npm test`, ข้อมูลทดสอบขึ้นต้น ZZTEST และลบเมื่อจบ) + scripts/test-auth-guards.mjs (30 ข้อ)
 - ข้อควรระวังตอนทดสอบ: ถ้า `npm run dev` ของผู้ใช้เปิดพอร์ต 3000 อยู่ สคริปต์ที่เปิด `npm start` จะชนกัน (action id ไม่ตรง) — ปิด dev server ก่อนรัน
+
+## 2026-11-07 — Day 4 (Inventory, Batch, FEFO, Notification v1)
+- `stock.consumeFefo`: เลือกล็อตด้วย `SELECT … FOR UPDATE` เรียง `expiryDate ASC NULLS LAST, receivedAt ASC, id` ข้ามล็อตที่ `expiryDate < วันนี้ (เวลาไทย)` (หมดอายุวันนี้ยังขายได้ถึงสิ้นวัน) → คำขอพร้อมกันบนสินค้าเดียวกันถูกจัดคิวที่ DB; ผู้เรียกที่ตัดหลายสินค้าต้องเรียงตาม productId (Day 5)
+- ไม่พอ → `InsufficientStockError` (ผู้เรียกปล่อยให้ transaction rollback); movement ต่อล็อต, balanceAfter ต่อเนื่อง, `stockQty` = Σ remainingQty
+- `adjustBatch`: ADD/SET ที่ทำให้ยอดเพิ่มจะเพิ่ม `initialQty` ตามส่วนต่าง (เพื่อรักษา CHECK `remainingQty <= initialQty`); ต้องมีเหตุผลทุกครั้ง; ล็อกแถวก่อนแก้
+- สต็อกหมดอายุยังนับใน `stockQty` แต่ "ขายได้" (sellable) ไม่รวม; ADMIN ตัดทิ้งด้วยการปรับสต็อก
+- Notification: ไม่มีวันที่ใน dedupeKey (แจ้งครั้งเดียวต่อเหตุการณ์) และลบแถวเมื่อเงื่อนไขหมดไปเพื่อให้แจ้งใหม่ได้; `syncNotifications()` เรียกหลังรับเข้า/ปรับ และเมื่อ ADMIN เปิดหน้าคลัง/layout (throttle 5 นาทีต่อ instance, best-effort — ไม่มี cron)
+- กระดิ่งใน Topbar (ADMIN) พาไปแท็บ "แจ้งเตือน" ในหน้าคลังสินค้า; Notification Center แยกหน้าเป็นงาน Day 8
+- CASHIER: ดูคงเหลือ/ล็อตได้ แต่ไม่เห็นต้นทุน ไม่เห็นประวัติ/แจ้งเตือน และปรับสต็อกไม่ได้ (ตรวจฝั่ง server)
+- กรอง "ใกล้หมด" ทำใน JS (จำนวนสินค้าระดับร้านเดียว); ไม่มี pagination ในแท็บคงเหลือ
+- ตัวเลข "ใกล้หมดอายุ" ใช้ `near_expiry_days` ใน SystemSetting (ค่าเริ่มต้น 30)
+- เทสต์: stock.test.ts 14 เคส (FEFO, ล็อตหมดอายุ, rollback หลายสินค้า, พร้อมกัน 2 และ 6 คำขอ, ปรับสต็อก, notification) + guard script 40 ข้อ (รันด้วย `BASE_URL=http://localhost:3101` ถ้าพอร์ต 3000 ถูกใช้)

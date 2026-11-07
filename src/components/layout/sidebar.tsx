@@ -14,7 +14,7 @@ const ITEMS: Item[] = [
   { href: "/pos", label: "ขายหน้าร้าน (POS)", icon: ShoppingCart, roles: ["ADMIN", "CASHIER"], ready: false },
   { href: "/products", label: "สินค้า", icon: Package, roles: ["ADMIN"], ready: true },
   { href: "/categories", label: "หมวดหมู่", icon: Tags, roles: ["ADMIN"], ready: true },
-  { href: "/inventory", label: "คลังสินค้า", icon: Boxes, roles: ["ADMIN", "CASHIER"], ready: false },
+  { href: "/inventory", label: "คลังสินค้า", icon: Boxes, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/sales", label: "ประวัติการขาย", icon: Receipt, roles: ["ADMIN", "CASHIER"], ready: false },
   { href: "/reports", label: "รายงาน", icon: BarChart3, roles: ["ADMIN"], ready: false },
   { href: "/users", label: "ผู้ใช้งาน", icon: Users, roles: ["ADMIN"], ready: true },

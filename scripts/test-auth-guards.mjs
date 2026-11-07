@@ -88,6 +88,23 @@ for (const p of ['/products', '/categories']) check('CASHIER เข้า ' + p 
 check('ADMIN เข้า /products เห็นสินค้า seed', (await body('/products', at)).includes('DR001'));
 check('ADMIN เข้า /categories เห็นหมวด seed', (await body('/categories', at)).includes('เครื่องดื่ม'));
 
+// 4c) inventory
+const zero = '00000000-0000-4000-8000-000000000000';
+a = await act('receiveStockAction', { productId: zero, qty: 1, costPrice: '1', expiryDate: '', batchNo: '', note: '' }, ct); check('CASHIER เรียก receiveStockAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+a = await act('adjustStockAction', { batchId: zero, mode: 'REMOVE', qty: 1, reason: 'x' }, ct); check('CASHIER เรียก adjustStockAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+a = await act('markAllNotificationsReadAction', undefined, ct); check('CASHIER เรียก markAllNotificationsReadAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์'));
+const inv = await body('/inventory', ct);
+check('CASHIER ดู /inventory ได้ (คงเหลือ)', inv.includes('DR001') && !inv.includes('ประวัติเคลื่อนไหว'));
+const invAlerts = await body('/inventory?tab=alerts', ct);
+check('CASHIER ขอ tab=alerts → ได้แท็บคงเหลือเท่านั้น', !invAlerts.includes('อ่านทั้งหมด') && !invAlerts.includes('ไม่มีการแจ้งเตือน'));
+const prodRow = await db.product.findUniqueOrThrow({ where: { sku: 'DR001' } });
+const detailC = await body('/inventory/' + prodRow.id, ct);
+check('CASHIER ดูรายละเอียดล็อตได้ แต่ไม่เห็นทุน/ปุ่มปรับ/ประวัติ', detailC.includes('ล็อตสินค้า') && !detailC.includes('รับสินค้าเข้า') && !detailC.includes('ทุน/หน่วย') && !detailC.includes('ประวัติการเคลื่อนไหวล่าสุด'));
+const detailA = await body('/inventory/' + prodRow.id, at);
+check('ADMIN เห็นปุ่มรับเข้า ทุน และประวัติ', detailA.includes('รับสินค้าเข้า') && detailA.includes('ทุน/หน่วย') && detailA.includes('ประวัติการเคลื่อนไหวล่าสุด'));
+check('ADMIN เห็นแท็บแจ้งเตือน', (await body('/inventory?tab=alerts', at)).includes('แจ้งเตือน'));
+check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory/not-a-uuid', at)).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
+
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit
 a = await act("createUserAction", { ...newUser, role: "CASHIER" }, at);
 const created = await db.user.findUnique({ where: { email: newUser.email } });
