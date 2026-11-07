@@ -105,6 +105,55 @@ check('ADMIN เห็นปุ่มรับเข้า ทุน และ�
 check('ADMIN เห็นแท็บแจ้งเตือน', (await body('/inventory?tab=alerts', at)).includes('แจ้งเตือน'));
 check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory/not-a-uuid', at)).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
 
+// 4d) POS / checkout / ใบเสร็จ / ประวัติการขาย (สร้างสินค้าทดสอบเอง ลบเมื่อจบ)
+{
+  const cat = await db.category.findFirstOrThrow();
+  const prod = await db.product.create({ data: { sku: 'ZZGUARD-POS', name: 'ZZGUARD POS', categoryId: cat.id, costPrice: '10', price: '50', stockQty: 10 } });
+  await db.productBatch.create({ data: { productId: prod.id, batchNo: 'ZZG-1', costPrice: '10', initialQty: 10, remainingQty: 10 } });
+  const uuid = () => crypto.randomUUID();
+  const saleIdOf = (t) => (t.match(/"saleId":"([0-9a-f-]{36})"/) || [])[1];
+  const stockNow = async () => (await db.product.findUniqueOrThrow({ where: { id: prod.id } })).stockQty;
+  try {
+    let r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '100' }, undefined);
+    check('ไม่ล็อกอิน checkoutCashAction → ไม่สำเร็จ + ไม่ตัดสต็อก', !r.text.includes('"ok":true') && (await stockNow()) === 10);
+    // แก้ราคาใน payload (ฟิลด์เกิน) ต้องไม่มีผล
+    const key = uuid();
+    r = await act('checkoutCashAction', { idempotencyKey: key, items: [{ productId: prod.id, quantity: 2, price: '0.01', unitPrice: '0.01' }], amountPaid: '1000', total: '0.02' }, at);
+    const adminSale = saleIdOf(r.text);
+    const s1 = adminSale && await db.sale.findUnique({ where: { id: adminSale } });
+    check('ADMIN checkout สำเร็จ ยอดคิดจากราคาใน DB (ไม่เชื่อ payload)', !!s1 && s1.total.toFixed(2) === '100.00' && s1.changeAmount.toFixed(2) === '900.00' && (await stockNow()) === 8, s1 ? s1.total.toFixed(2) : r.text.slice(0, 120));
+    r = await act('checkoutCashAction', { idempotencyKey: key, items: [{ productId: prod.id, quantity: 2 }], amountPaid: '1000' }, at);
+    check('ส่ง key เดิมซ้ำ → ได้บิลเดิม ไม่ตัดสต็อกซ้ำ', saleIdOf(r.text) === adminSale && (await stockNow()) === 8);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '1' }, ct);
+    check('รับเงินไม่พอ → ปฏิเสธ', r.text.includes('รับเงินไม่พอ') && (await stockNow()) === 8);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 99 }], amountPaid: '99999' }, ct);
+    check('สต็อกไม่พอ → ปฏิเสธ ไม่ตัดสต็อก', r.text.includes('สต็อกไม่พอ') && (await stockNow()) === 8);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: -1 }], amountPaid: '100' }, ct);
+    check('จำนวนติดลบ → ปฏิเสธ', !r.text.includes('"ok":true') && (await stockNow()) === 8);
+    r = await act('checkoutCashAction', { idempotencyKey: uuid(), items: [{ productId: prod.id, quantity: 1 }], amountPaid: '60' }, ct);
+    const cashierSale = saleIdOf(r.text);
+    check('CASHIER checkout สำเร็จ', !!cashierSale && (await stockNow()) === 7);
+    const rc = (id, t) => body('/receipt/' + id, t);
+    check('ADMIN ดูใบเสร็จของ CASHIER ได้', (await rc(cashierSale, at)).includes('ใบเสร็จรับเงิน'));
+    check('CASHIER ดูใบเสร็จของตนเองได้', (await rc(cashierSale, ct)).includes('ใบเสร็จรับเงิน'));
+    check('CASHIER ดูใบเสร็จของ ADMIN ไม่ได้ (404 ไม่รั่ว)', (await rc(adminSale, ct)).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
+    const adminReceiptNo = (await db.sale.findUniqueOrThrow({ where: { id: adminSale } })).receiptNo;
+    const cashierReceiptNo = (await db.sale.findUniqueOrThrow({ where: { id: cashierSale } })).receiptNo;
+    const listC = await body('/sales?q=SM-', ct), listA = await body('/sales?q=SM-', at);
+    check('/sales: CASHIER เห็นเฉพาะบิลตนเอง', listC.includes(cashierReceiptNo) && !listC.includes(adminReceiptNo));
+    check('/sales: ADMIN เห็นทุกบิล', listA.includes(cashierReceiptNo) && listA.includes(adminReceiptNo));
+    check('/pos: ราคา/สต็อกแสดงจาก DB', (await body('/pos', ct)).includes('ZZGUARD POS'));
+  } finally {
+    const saleIds = (await db.saleItem.findMany({ where: { productId: prod.id }, select: { saleId: true } })).map((s) => s.saleId);
+    await db.notification.deleteMany({ where: { productId: prod.id } });
+    await db.stockMovement.deleteMany({ where: { productId: prod.id } });
+    await db.payment.deleteMany({ where: { saleId: { in: saleIds } } });
+    await db.sale.deleteMany({ where: { id: { in: saleIds } } });
+    await db.productBatch.deleteMany({ where: { productId: prod.id } });
+    await db.product.delete({ where: { id: prod.id } });
+  }
+}
+
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit
 a = await act("createUserAction", { ...newUser, role: "CASHIER" }, at);
 const created = await db.user.findUnique({ where: { email: newUser.email } });

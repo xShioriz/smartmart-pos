@@ -61,3 +61,15 @@
 - กรอง "ใกล้หมด" ทำใน JS (จำนวนสินค้าระดับร้านเดียว); ไม่มี pagination ในแท็บคงเหลือ
 - ตัวเลข "ใกล้หมดอายุ" ใช้ `near_expiry_days` ใน SystemSetting (ค่าเริ่มต้น 30)
 - เทสต์: stock.test.ts 14 เคส (FEFO, ล็อตหมดอายุ, rollback หลายสินค้า, พร้อมกัน 2 และ 6 คำขอ, ปรับสต็อก, notification) + guard script 40 ข้อ (รันด้วย `BASE_URL=http://localhost:3101` ถ้าพอร์ต 3000 ถูกใช้)
+
+## 2026-11-07 — Day 5 (POS + Checkout เงินสด + ใบเสร็จ + ประวัติการขายพื้นฐาน)
+- Checkout รับเฉพาะ `{idempotencyKey, items[{productId, quantity}], amountPaid}`; ราคา/ยอด/ส่วนลดคำนวณจาก DB ใน `pricing.calculateCart` (pure; ส่วนลด = 0 จนกว่า Day 6) — payload ที่เกิน (price/total) ถูกทิ้ง ทดสอบแล้วผ่าน HTTP จริง
+- ลำดับใน transaction เดียว: Sale(PENDING_PAYMENT) → ตัด FEFO ทีละสินค้า (เรียง productId กัน deadlock) + SaleItem(snapshot, unitCost=ถัวเฉลี่ยจากล็อตที่ตัดจริง) + SaleItemBatch → Payment(CASH, PAID) → Sale=COMPLETED + `receiptNo` (`SM-yyyyMMdd(เวลาไทย)-saleNo 5 หลัก`; saleNo เป็น sequence ทั้งระบบ จึงเว้นช่วงได้ แต่ไม่ซ้ำ)
+- Idempotency: key ซ้ำ → คืนบิลเดิม; 2 คำขอ key เดียวพร้อมกัน → ตัวที่แพ้ชน unique แล้วคืนบิลของตัวที่ชนะ (ตัดสต็อกครั้งเดียว); key ของแคชเชียร์อื่นใช้ไม่ได้
+- Payment ของเงินสดบันทึก `environment = PRODUCTION` (เงินสดไม่ผ่าน Provider จึงไม่ใช่ sandbox)
+- แจ้งเตือนสต็อกหลังขายรันด้วย `after()` ใน Server Action (ไม่อยู่ใน transaction ขาย; ล้มเหลวไม่กระทบการขาย)
+- POS: ตะกร้าเก็บใน localStorage (ปรับตามสต็อกปัจจุบันตอนโหลด), ยอดฝั่ง client คิดเป็นสตางค์จำนวนเต็มเพื่อแสดงผลเท่านั้น, key ใหม่เมื่อตะกร้าเปลี่ยน, F2 โฟกัสค้นหา, Enter = สแกน/พิมพ์ SKU-บาร์โค้ดตรงเป๊ะแล้วเพิ่มลงตะกร้า
+- ใบเสร็จ: CASHIER ดูได้เฉพาะบิลตนเอง (บิลคนอื่น = 404 ไม่เปิดเผยว่ามี); พิมพ์ด้วย `window.print()` + CSS 80 มม. (ซ่อน sidebar/topbar)
+- /sales: ค้นด้วยเลขที่ใบเสร็จ + กรองวัน (เวลาไทย) + แบ่งหน้า; CASHIER เห็นเฉพาะบิลตนเอง; หน้ารายละเอียดบิลแยกเป็นงาน Day 7 (ตอนนี้ลิงก์ไปใบเสร็จ)
+- เทสต์: checkout.test.ts 14 เคส (ขายสำเร็จ/ข้ามล็อต/snapshot/rollback/ซ้ำ/พร้อมกัน/deadlock/หมดอายุ/Zod) รวม 43 เคส + guard script รวม POS/ใบเสร็จ/ประวัติการขายผ่าน HTTP
+- ยังไม่ได้ตรวจด้วยตา: หน้า POS/ใบเสร็จ/พิมพ์ (ล็อกอินในเบราว์เซอร์ไม่ได้) → ต้องทดสอบมือก่อนถือว่า Day 5 เสร็จ

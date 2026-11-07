@@ -128,3 +128,11 @@
     @apply font-sans;
   }
 }
+/* พิมพ์ใบเสร็จ: กระดาษความร้อน 80 มม. — ซ่อนทุกอย่างยกเว้นใบเสร็จ */
+@media print {
+  @page { size: 80mm auto; margin: 0; }
+  html, body { background: #fff !important; }
+  aside, header { display: none !important; }
+  main { padding: 0 !important; max-width: none !important; }
+  .receipt { width: 80mm !important; margin: 0 !important; padding: 4mm !important; }
+}

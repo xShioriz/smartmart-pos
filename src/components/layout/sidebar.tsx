@@ -11,11 +11,11 @@ type Item = { href: string; label: string; icon: React.ComponentType<{ className
 // ready=false → แสดงเป็น "เร็ว ๆ นี้" (ยังไม่พัฒนา) แก้เป็น true เมื่อหน้าใช้งานได้จริงเท่านั้น
 const ITEMS: Item[] = [
   { href: "/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard, roles: ["ADMIN"], ready: false },
-  { href: "/pos", label: "ขายหน้าร้าน (POS)", icon: ShoppingCart, roles: ["ADMIN", "CASHIER"], ready: false },
+  { href: "/pos", label: "ขายหน้าร้าน (POS)", icon: ShoppingCart, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/products", label: "สินค้า", icon: Package, roles: ["ADMIN"], ready: true },
   { href: "/categories", label: "หมวดหมู่", icon: Tags, roles: ["ADMIN"], ready: true },
   { href: "/inventory", label: "คลังสินค้า", icon: Boxes, roles: ["ADMIN", "CASHIER"], ready: true },
-  { href: "/sales", label: "ประวัติการขาย", icon: Receipt, roles: ["ADMIN", "CASHIER"], ready: false },
+  { href: "/sales", label: "ประวัติการขาย", icon: Receipt, roles: ["ADMIN", "CASHIER"], ready: true },
   { href: "/reports", label: "รายงาน", icon: BarChart3, roles: ["ADMIN"], ready: false },
   { href: "/users", label: "ผู้ใช้งาน", icon: Users, roles: ["ADMIN"], ready: true },
   { href: "/settings", label: "ตั้งค่า", icon: Settings, roles: ["ADMIN"], ready: false },
