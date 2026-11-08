@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, Loader2, Minus, Plus, QrCode, Search, ShoppingCart, Star, Tag, Trash2, X } from "lucide-react";
+import { Banknote, Delete, Loader2, Minus, Plus, QrCode, Search, ShoppingCart, Star, Tag, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,6 +168,16 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
   const itemCount = lines.reduce((s, l) => s + l.qty, 0);
   const paidSatang = parseMoneyToSatang(paid);
   const enough = paidSatang !== null && paidSatang >= totalSatang;
+
+  /** แป้นตัวเลขบนจอ: รับเฉพาะรูปแบบเงินที่ถูกต้อง (จำนวนเต็มไม่เกิน 7 หลัก ทศนิยมไม่เกิน 2 ตำแหน่ง) */
+  function pressKey(k: string) {
+    setPaid((cur) => {
+      if (k === "back") return cur.slice(0, -1);
+      if (k === ".") return cur.includes(".") ? cur : (cur || "0") + ".";
+      const next = cur === "0" ? k : cur + k;
+      return /^\d{1,7}(\.\d{0,2})?$/.test(next) ? next : cur;
+    });
+  }
 
   function openPay() {
     if (!lines.length) return;
@@ -385,10 +395,18 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
               </div>
               <div className="space-y-2">
                 <Label htmlFor="paid">รับเงินมา (บาท)</Label>
-                <Input id="paid" value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="decimal" autoFocus autoComplete="off" className="h-11 text-lg tabular-nums" aria-invalid={paid !== "" && paidSatang === null} />
+                <Input id="paid" value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="none" autoFocus autoComplete="off" className="h-11 text-lg tabular-nums" aria-invalid={paid !== "" && paidSatang === null} />
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={() => setPaid((totalSatang / 100).toFixed(2))}>พอดี</Button>
                   {[100, 500, 1000].map((v) => <Button key={v} type="button" variant="outline" size="sm" onClick={() => setPaid(String(v))}>฿{v.toLocaleString("th-TH")}</Button>)}
+                  <Button type="button" variant="outline" size="sm" onClick={() => setPaid("")}>ล้าง</Button>
+                </div>
+                <div className="grid grid-cols-3 gap-2" role="group" aria-label="แป้นตัวเลข">
+                  {["7", "8", "9", "4", "5", "6", "1", "2", "3", ".", "0", "back"].map((k) => (
+                    <Button key={k} type="button" variant="outline" className="h-12 text-xl tabular-nums" onClick={() => pressKey(k)} aria-label={k === "back" ? "ลบตัวสุดท้าย" : k === "." ? "จุดทศนิยม" : k}>
+                      {k === "back" ? <Delete className="size-5" /> : k}
+                    </Button>
+                  ))}
                 </div>
               </div>
               <div className={cn("flex items-baseline justify-between rounded-lg border p-3", enough ? "border-green-300 bg-green-50" : "bg-muted/40")}>
