@@ -53,7 +53,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
         <EmptyState icon={Receipt} title={q || date || view !== "done" ? "ไม่พบรายการขายตามเงื่อนไข" : "ยังไม่มีรายการขาย"} description={q || date || view !== "done" ? undefined : "เมื่อมีการขายผ่านหน้า POS รายการจะแสดงที่นี่"} />
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
+          <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(4)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_tr>:nth-child(8)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>เลขที่ใบเสร็จ</TableHead><TableHead>วันเวลา</TableHead><TableHead>พนักงาน</TableHead>

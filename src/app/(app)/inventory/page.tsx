@@ -71,7 +71,7 @@ async function StockTab({ q, filter, isAdmin }: { q?: string; filter: InventoryF
         <EmptyState icon={Boxes} title={q || filter !== "all" ? "ไม่พบสินค้าตามเงื่อนไข" : "ยังไม่มีสินค้า"} />
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
+          <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>SKU</TableHead><TableHead>ชื่อสินค้า</TableHead><TableHead>หมวดหมู่</TableHead>

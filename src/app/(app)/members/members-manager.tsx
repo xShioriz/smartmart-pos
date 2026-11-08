@@ -40,7 +40,7 @@ export function MembersManager({ items, filtered }: { items: Item[]; filtered: b
         <EmptyState icon={UserRound} title={filtered ? "ไม่พบสมาชิกที่ค้นหา" : "ยังไม่มีสมาชิก"} description={filtered ? undefined : "เพิ่มสมาชิกเพื่อสะสมแต้มจากการซื้อ"} />
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
+          <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>รหัส</TableHead><TableHead>ชื่อ</TableHead><TableHead>เบอร์โทร</TableHead>

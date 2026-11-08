@@ -61,7 +61,7 @@ export function PromotionsManager({ items, products, categories }: { items: Item
         <EmptyState icon={Percent} title="ยังไม่มีโปรโมชั่น" description="สร้างโปรโมชั่นแรกเพื่อให้ระบบลดราคาอัตโนมัติที่หน้า POS" action={<Button onClick={() => open(null)}><Plus /> เพิ่มโปรโมชั่น</Button>} />
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
-          <Table>
+          <Table className="max-sm:[&_tr>:nth-child(2)]:hidden max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>ชื่อโปรโมชั่น</TableHead><TableHead>ประเภท</TableHead><TableHead>เป้าหมาย</TableHead><TableHead className="text-right">ส่วนลด</TableHead>

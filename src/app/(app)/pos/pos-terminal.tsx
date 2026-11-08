@@ -61,6 +61,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
   const [qrLocked, setQrLocked] = useState(false);
   const [qrInitial, setQrInitial] = useState<QrState | null>(null);
   const [clearOpen, setClearOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false); // เฉพาะจอเล็ก (< lg): ตะกร้าเป็นแผงเต็มจอที่เปิดจากแถบด้านล่าง
   const [paid, setPaid] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -227,7 +228,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
   }, [router]);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]">
+    <div className="grid gap-4 pb-24 lg:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)] lg:pb-0">
       {/* ซ้าย: ค้นหา + สินค้า */}
       <section className="min-w-0">
         <div className="relative mb-3">
@@ -257,7 +258,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
         {filtered.length === 0 ? (
           <p className="rounded-xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">ไม่พบสินค้าที่ตรงกับคำค้น</p>
         ) : (
-          <div className="grid max-h-[calc(100vh-17rem)] grid-cols-2 gap-3 overflow-y-auto pr-1 md:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:max-h-[calc(100vh-17rem)] lg:overflow-y-auto lg:pr-1 xl:grid-cols-4">
             {filtered.map((p) => {
               const inCart = qtyOf(p.id);
               const out = p.sellable <= 0;
@@ -277,10 +278,19 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
       </section>
 
       {/* ขวา: ตะกร้า */}
-      <aside className="flex max-h-[calc(100vh-9rem)] flex-col rounded-xl border bg-card lg:sticky lg:top-4" aria-label="ตะกร้าสินค้า">
+      <aside
+        className={cn(
+          "flex-col border bg-card lg:sticky lg:top-[4.5rem] lg:flex lg:max-h-[calc(100vh-9rem)] lg:rounded-xl",
+          cartOpen ? "fixed inset-0 z-40 flex" : "hidden",
+        )}
+        aria-label="ตะกร้าสินค้า"
+      >
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="flex items-center gap-2 font-semibold"><ShoppingCart className="size-4" /> ตะกร้า <span className="text-sm font-normal text-muted-foreground">({lines.length} รายการ / {itemCount} ชิ้น)</span></h2>
-          {lines.length > 0 && <Button variant="ghost" size="sm" onClick={() => setClearOpen(true)}><Trash2 /> ล้าง</Button>}
+          <div className="flex items-center gap-1">
+            {lines.length > 0 && <Button variant="ghost" size="sm" onClick={() => setClearOpen(true)}><Trash2 /> ล้าง</Button>}
+            <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setCartOpen(false)}><X /> ปิด</Button>
+          </div>
         </div>
         <div className="border-b p-3"><MemberPicker value={member} onChange={setMember} /></div>
         <div className="min-h-32 flex-1 overflow-y-auto">
@@ -299,15 +309,15 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <Button size="icon-sm" variant="outline" onClick={() => setQty(p, qty - 1)} aria-label="ลดจำนวน"><Minus /></Button>
+                      <Button size="icon-sm" variant="outline" className="max-lg:size-10" onClick={() => setQty(p, qty - 1)} aria-label="ลดจำนวน"><Minus /></Button>
                       <Input
                         value={qty}
                         inputMode="numeric"
                         aria-label={`จำนวน ${p.name}`}
-                        className="h-7 w-14 px-1 text-center tabular-nums"
+                        className="h-7 w-14 px-1 text-center tabular-nums max-lg:h-10 max-lg:w-16"
                         onChange={(e) => { const n = parseInt(e.target.value.replace(/\D/g, ""), 10); if (!Number.isNaN(n)) setQty(p, n); }}
                       />
-                      <Button size="icon-sm" variant="outline" onClick={() => setQty(p, qty + 1)} aria-label="เพิ่มจำนวน"><Plus /></Button>
+                      <Button size="icon-sm" variant="outline" className="max-lg:size-10" onClick={() => setQty(p, qty + 1)} aria-label="เพิ่มจำนวน"><Plus /></Button>
                     </div>
                     <span className="text-right tabular-nums">{Number(quoteLine(p.id)?.discount ?? 0) > 0 ? (<><span className="mr-1 text-xs text-muted-foreground line-through">{baht(satang(p.price) * qty)}</span><span className="font-medium">{formatMoney(quoteLine(p.id)!.lineTotal === quoteLine(p.id)!.net ? quoteLine(p.id)!.net : (Number(quoteLine(p.id)!.lineTotal) - Number(quoteLine(p.id)!.discount)).toFixed(2))}</span></>) : <span className="font-medium">{baht(satang(p.price) * qty)}</span>}</span>
                   </div>
@@ -331,6 +341,15 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
           <p className="text-center text-[11px] text-muted-foreground">ราคาและโปรโมชั่นคำนวณโดยเซิร์ฟเวอร์ และคำนวณซ้ำอีกครั้งตอนยืนยัน</p>
         </div>
       </aside>
+
+      {/* แถบสรุปตะกร้า (จอเล็ก) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center md:left-16 justify-between gap-3 border-t bg-card px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden">
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">{lines.length} รายการ / {itemCount} ชิ้น</p>
+          <p className="truncate text-xl font-bold text-primary tabular-nums">{lines.length && !quoteReady ? "…" : baht(totalSatang)}</p>
+        </div>
+        <Button className="h-11 shrink-0 px-5 text-base" onClick={() => setCartOpen(true)}><ShoppingCart /> ดูตะกร้า</Button>
+      </div>
 
       {/* ชำระเงิน */}
       <Dialog open={payOpen} onOpenChange={(o) => { if (!pending && !qrLocked) setPayOpen(o); }}>
