@@ -53,12 +53,17 @@ export async function generateDemoSales(opts: DemoOptions = {}): Promise<DemoSum
   const start = new Date(`${toBangkokDateKey(new Date())}T00:00:00.000Z`);
   start.setUTCDate(start.getUTCDate() - days);
   let restocked = 0;
-  const perProduct = Math.ceil(((days + 1) * ((lo + hi) / 2) * 2.2) / products.length) + 40;
-  for (const p of products) {
+  // ประมาณจำนวนชิ้นที่แต่ละสินค้าจะขายได้ตามน้ำหนักความนิยม (สินค้ายอดนิยมขายมากกว่าค่าเฉลี่ยหลายเท่า) แล้วเผื่อ 60%
+  // — ถ้าเติมเท่ากันทุกตัว สินค้ายอดนิยมจะหมดกลางช่วง ทำให้วัน "ล่าสุด" ขายไม่ได้และกราฟเบี้ยว
+  const expectedBills = (days + 1) * ((lo + hi) / 2) * 1.4; // แนวโน้มขาขึ้น + วันหยุดขายดี
+  const UNITS_PER_BILL = 5.5; // เฉลี่ย ~2.5 รายการ × ~2 ชิ้น (เผื่อ)
+  for (let i = 0; i < products.length; i++) {
+    const p = products[i];
+    const qty = Math.ceil(expectedBills * UNITS_PER_BILL * (weights[i] / totalW) * 1.6) + 30;
     await db.$transaction((tx) =>
-      receiveBatch(tx, admin.id, { productId: p.id, qty: perProduct, costPrice: p.costPrice, expiryDate: null, type: "RESTOCK", note: "ข้อมูลสาธิต: เติมสต็อกย้อนหลัง", receivedAt: new Date(`${start.toISOString().slice(0, 10)}T01:00:00+07:00`) }),
+      receiveBatch(tx, admin.id, { productId: p.id, qty, costPrice: p.costPrice, expiryDate: null, type: "RESTOCK", note: "ข้อมูลสาธิต: เติมสต็อกย้อนหลัง", receivedAt: new Date(`${start.toISOString().slice(0, 10)}T01:00:00+07:00`) }),
     );
-    restocked += perProduct;
+    restocked += qty;
   }
 
   const created: { id: string; createdAt: Date; todayIdx: number }[] = [];
