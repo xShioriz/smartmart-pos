@@ -1,4 +1,4 @@
-import { Banknote, BarChart3, Percent, QrCode, Receipt, Undo2, Wallet } from "lucide-react";
+import { Banknote, BarChart3, Download, Percent, QrCode, Receipt, Undo2, Wallet } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,14 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <span className="text-sm text-muted-foreground">ถึง</span>
         <Input name="to" type="date" defaultValue={range.to} aria-label="ถึงวันที่" className="w-44" />
         <Button type="submit" variant="outline"><BarChart3 /> แสดงรายงาน</Button>
+        <span className="ml-auto flex flex-wrap gap-2">
+          <a href={`/reports/export?type=daily&from=${range.from}&to=${range.to}`} download className="inline-flex h-8 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm font-medium hover:bg-muted">
+            <Download className="size-4" /> CSV สรุปรายวัน
+          </a>
+          <a href={`/reports/export?type=products&from=${range.from}&to=${range.to}`} download className="inline-flex h-8 items-center gap-1.5 rounded-lg border bg-background px-2.5 text-sm font-medium hover:bg-muted">
+            <Download className="size-4" /> CSV สินค้าขายดี
+          </a>
+        </span>
       </form>
       {notice && <p role="status" className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{notice}</p>}
 

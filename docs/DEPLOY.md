@@ -63,3 +63,10 @@ npx tsx scripts/seed-demo.mts --days 30
 2. สำรอง: รันในเครื่อง `npm run build && npm start` ชี้ฐาน dev (เปิดไว้ก่อนเข้าห้อง)
 3. QR สาธิตต้องใช้อินเทอร์เน็ต + Omise test dashboard เปิดไว้ในอีกแท็บ; ถ้าเน็ตล่ม ให้สาธิตเงินสดและชี้ผลทดสอบอัตโนมัติ (140 เคส) แทน
 4. เตรียมภาพหน้าจอทุกหน้าสำรองไว้
+
+## อัปเดตเวอร์ชันหลัง deploy ครั้งแรก (มี migration ใหม่)
+ลำดับสำคัญ: **migrate ฐาน production ก่อน แล้วค่อย push/deploy โค้ด** (migration ชุดนี้เพิ่มตารางอย่างเดียว โค้ดเก่ายังทำงานกับ schema ใหม่ได้ แต่โค้ดใหม่จะพังถ้ายังไม่มีตาราง)
+1. ตั้ง `$env:DATABASE_URL` / `$env:DIRECT_URL` ของ production ใน PowerShell (ไม่ต้องตั้งรหัสผ่าน seed เพราะไม่ seed ซ้ำ)
+2. `npx prisma migrate deploy` (ต้อง apply 1 migration ใหม่: `20261108090000_login_throttle_shifts`)
+3. `npx tsx scripts/check-deploy.mts` ต้องขึ้น migration ครบ 4 รายการ
+4. จึง push โค้ด

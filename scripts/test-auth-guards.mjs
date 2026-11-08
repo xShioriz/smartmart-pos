@@ -266,6 +266,72 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
   check('ไม่ล็อกอิน updateSettingsAction → ไม่สำเร็จ', !a.text.includes('"ok":true'));
 }
 
+// 4h) ส่งออก CSV / ปิดกะ (ส่วนเพิ่มหลังจบ Day 10)
+{
+  const q = '/reports/export?type=daily&from=2026-01-01&to=2026-01-31';
+  let r = await get(q);
+  check('ไม่ล็อกอิน export CSV → redirect /login', r.status >= 300 && r.status < 400 && loc(r).includes('/login'), String(r.status));
+  r = await get(q, ct);
+  check('CASHIER export CSV → 403', r.status === 403, String(r.status));
+  r = await get(q, at);
+  const buf = Buffer.from(await r.arrayBuffer()); // fetch().text() ตัด BOM ทิ้ง จึงตรวจจากไบต์จริง
+  const hasBom = buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf;
+  const csvText = buf.toString('utf8').replace(/^﻿/, '');
+  check('ADMIN export รายวัน → 200 เป็น text/csv พร้อมชื่อไฟล์', r.status === 200 && (r.headers.get('content-type') || '').includes('text/csv') && (r.headers.get('content-disposition') || '').includes('smartmart-daily-2026-01-01_2026-01-31.csv'), String(r.status));
+  check('CSV มี BOM, หัวตารางภาษาไทย, แถวรวม และครบ 31 วัน', hasBom && csvText.includes('วันที่,จำนวนบิล') && csvText.includes('รวม,') && csvText.trim().split('\r\n').length === 1 + 31 + 1);
+  r = await get('/reports/export?type=products&from=2026-01-01&to=2026-01-31', at);
+  check('ADMIN export สินค้าขายดี → 200', r.status === 200 && (await r.text()).includes('อันดับ,รหัสสินค้า'));
+  for (const [name, p] of [
+    ['type ผิด', '/reports/export?type=x&from=2026-01-01&to=2026-01-31'],
+    ['ไม่มีพารามิเตอร์', '/reports/export'],
+    ['วันเริ่มหลังวันสิ้นสุด', '/reports/export?type=daily&from=2026-02-01&to=2026-01-01'],
+    ['วันที่ไม่มีจริง (31 ก.พ.)', '/reports/export?type=daily&from=2026-02-31&to=2026-03-01'],
+    ['ช่วงเกิน 366 วัน', '/reports/export?type=daily&from=2000-01-01&to=2026-01-01'],
+    ['พารามิเตอร์ขยะ', '/reports/export?type=daily&from=%3Cscript%3E&to=x'],
+  ]) {
+    r = await get(p, at);
+    check('export ' + name + ' → 400 (ไม่พัง)', r.status === 400, String(r.status));
+  }
+
+  // ปิดกะ: หน้า + สิทธิ์ + action
+  check('ไม่ล็อกอินเปิด /shifts → /login', loc(await get('/shifts')).includes('/login'));
+  r = await get('/shifts', at);
+  check('ADMIN เปิด /shifts ได้', r.status === 200);
+  r = await get('/shifts', ct);
+  const shiftBody = await r.text();
+  check('CASHIER เปิด /shifts ได้ แต่ไม่เห็นประวัติกะ (เฉพาะ ADMIN)', r.status === 200 && shiftBody.includes('ปิดกะ') && !shiftBody.includes('ประวัติกะ'));
+  check('ADMIN เห็นประวัติกะ', (await body('/shifts', at)).includes('ประวัติกะ'));
+
+  const hasOpen = (await db.shift.count({ where: { status: 'OPEN' } })) > 0;
+  let a = await act('openShiftAction', { openingCash: '1000' }, undefined);
+  check('ไม่ล็อกอิน openShiftAction → ไม่สำเร็จ', !a.text.includes('"ok":true'));
+  a = await act('openShiftAction', { openingCash: '-5' }, at);
+  check('เงินทอนติดลบ → ปฏิเสธ', a.text.includes('ไม่ถูกต้อง') && !a.text.includes('"ok":true'));
+  a = await act('closeShiftAction', { shiftId: '00000000-0000-4000-8000-000000000000', countedCash: '10' }, ct);
+  check('ปิดกะที่ไม่มีจริง → ปฏิเสธ', a.text.includes('ไม่พบกะ'));
+  if (hasOpen) {
+    console.log('ข้าม flow เปิด/ปิดกะจริง: มีกะที่เปิดอยู่ใน DB อยู่แล้ว (ไม่แตะข้อมูลจริง)');
+  } else {
+    const before = await db.shift.count();
+    a = await act('openShiftAction', { openingCash: '500' }, ct);
+    check('CASHIER เปิดกะได้', a.text.includes('"ok":true'), a.text.slice(0, 120));
+    const sh = await db.shift.findFirst({ where: { status: 'OPEN' } });
+    a = await act('openShiftAction', { openingCash: '700' }, at);
+    check('เปิดกะซ้อนไม่ได้', a.text.includes('มีกะที่เปิดอยู่แล้ว'));
+    a = await act('closeShiftAction', { shiftId: sh.id, countedCash: '450' }, at);
+    check('นับไม่ตรงโดยไม่ใส่หมายเหตุ → ปฏิเสธ', a.text.includes('ระบุหมายเหตุ'));
+    a = await act('closeShiftAction', { shiftId: sh.id, countedCash: '450', note: 'ทดสอบ guard' }, at);
+    check('ปิดกะพร้อมหมายเหตุสำเร็จ (เงินขาด 50)', a.text.includes('"ok":true') && a.text.includes('-50.00'), a.text.slice(0, 160));
+    a = await act('closeShiftAction', { shiftId: sh.id, countedCash: '450', note: 'ซ้ำ' }, at);
+    check('ปิดกะซ้ำไม่ได้', a.text.includes('ปิดไปแล้ว'));
+    // ล้างข้อมูลทดสอบ
+    await db.auditLog.deleteMany({ where: { entityId: sh.id, action: { in: ['SHIFT_OPEN', 'SHIFT_CLOSE'] } } });
+    await db.shift.delete({ where: { id: sh.id } });
+    check('ล้างข้อมูลกะทดสอบแล้ว', (await db.shift.count()) === before);
+  }
+  await db.auditLog.deleteMany({ where: { action: 'REPORT_EXPORT', userId: admin.id, createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) } } });
+}
+
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit
 a = await act("createUserAction", { ...newUser, role: "CASHIER" }, at);
 const created = await db.user.findUnique({ where: { email: newUser.email } });
