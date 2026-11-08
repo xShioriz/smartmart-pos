@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { SortHead } from "@/components/shared/sort-head";
+import type { SortLink } from "@/lib/sort";
 import { formatMoney } from "@/lib/money";
 import type { ActionResult } from "@/lib/result";
 import { createMemberAction, setMemberActiveAction, updateMemberAction } from "./actions";
@@ -19,7 +21,7 @@ import { createMemberAction, setMemberActiveAction, updateMemberAction } from ".
 type Item = { id: string; code: string; name: string; phone: string; email: string | null; points: number; totalSpent: string; isActive: boolean };
 type Dlg = { kind: "form"; row: Item | null } | { kind: "toggle"; row: Item } | null;
 
-export function MembersManager({ items, filtered }: { items: Item[]; filtered: boolean }) {
+export function MembersManager({ items, filtered, sortLinks }: { items: Item[]; filtered: boolean; sortLinks: Record<"code" | "name" | "phone" | "points" | "spent" | "status", SortLink> }) {
   const [dlg, setDlg] = useState<Dlg>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -43,8 +45,8 @@ export function MembersManager({ items, filtered }: { items: Item[]; filtered: b
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>รหัส</TableHead><TableHead>ชื่อ</TableHead><TableHead>เบอร์โทร</TableHead>
-                <TableHead className="text-right">แต้มคงเหลือ</TableHead><TableHead className="text-right">ยอดซื้อสะสม</TableHead><TableHead>สถานะ</TableHead><TableHead className="text-right">จัดการ</TableHead>
+                <SortHead label="รหัส" {...sortLinks.code} /><SortHead label="ชื่อ" {...sortLinks.name} /><SortHead label="เบอร์โทร" {...sortLinks.phone} />
+                <SortHead label="แต้มคงเหลือ" right {...sortLinks.points} /><SortHead label="ยอดซื้อสะสม" right {...sortLinks.spent} /><SortHead label="สถานะ" {...sortLinks.status} /><TableHead className="text-right">จัดการ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

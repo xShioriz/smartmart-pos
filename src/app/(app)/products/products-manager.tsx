@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EmptyState } from "@/components/shared/empty-state";
+import { SortHead } from "@/components/shared/sort-head";
+import type { SortLink } from "@/lib/sort";
 import type { ActionResult } from "@/lib/result";
 import { formatMoney } from "@/lib/money";
 import { createProductAction, setProductActiveAction, updateProductAction } from "./actions";
@@ -29,7 +31,7 @@ function StockBadge({ qty, min }: { qty: number; min: number }) {
   return <span className="tabular-nums">{qty.toLocaleString("th-TH")}</span>;
 }
 
-export function ProductsManager({ items, categories, filtered, noCategories }: { items: Row[]; categories: { id: string; name: string }[]; filtered: boolean; noCategories: boolean }) {
+export function ProductsManager({ items, categories, filtered, noCategories, sortLinks }: { items: Row[]; categories: { id: string; name: string }[]; filtered: boolean; noCategories: boolean; sortLinks: Record<"sku" | "name" | "category" | "cost" | "price" | "stock" | "status", SortLink> }) {
   const [dlg, setDlg] = useState<Dlg>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -61,13 +63,13 @@ export function ProductsManager({ items, categories, filtered, noCategories }: {
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(4)]:hidden max-sm:[&_tr>:nth-child(7)]:hidden max-sm:[&_tr>:nth-child(1)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>SKU</TableHead>
-                <TableHead>ชื่อสินค้า</TableHead>
-                <TableHead>หมวดหมู่</TableHead>
-                <TableHead className="text-right">ราคาทุน</TableHead>
-                <TableHead className="text-right">ราคาขาย</TableHead>
-                <TableHead className="text-right">คงเหลือ</TableHead>
-                <TableHead>สถานะ</TableHead>
+                <SortHead label="SKU" {...sortLinks.sku} />
+                <SortHead label="ชื่อสินค้า" {...sortLinks.name} />
+                <SortHead label="หมวดหมู่" {...sortLinks.category} />
+                <SortHead label="ราคาทุน" right {...sortLinks.cost} />
+                <SortHead label="ราคาขาย" right {...sortLinks.price} />
+                <SortHead label="คงเหลือ" right {...sortLinks.stock} />
+                <SortHead label="สถานะ" {...sortLinks.status} />
                 <TableHead className="text-right">จัดการ</TableHead>
               </TableRow>
             </TableHeader>

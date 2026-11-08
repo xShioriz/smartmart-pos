@@ -33,7 +33,24 @@ export async function getReceipt(id: string, viewer: CurrentUser) {
   };
 }
 
-export type SalesFilter = { q?: string; date?: string; page?: number; view?: "done" | "review" | "unfinished" };
+export const SALES_SORT_KEYS = ["receipt", "time", "cashier", "items", "total", "method", "status"] as const;
+export type SalesSortKey = (typeof SALES_SORT_KEYS)[number];
+
+export type SalesFilter = { q?: string; date?: string; page?: number; view?: "done" | "review" | "unfinished"; sort?: { key: SalesSortKey; dir: "asc" | "desc" } };
+
+function salesOrder(s: { key: SalesSortKey; dir: "asc" | "desc" }): Prisma.SaleOrderByWithRelationInput[] {
+  const d = s.dir;
+  const tie: Prisma.SaleOrderByWithRelationInput[] = [{ createdAt: "desc" }, { id: "asc" }];
+  switch (s.key) {
+    case "receipt": return [{ receiptNo: { sort: d, nulls: "last" } }, ...tie];
+    case "cashier": return [{ cashier: { name: d } }, ...tie];
+    case "items": return [{ items: { _count: d } }, ...tie];
+    case "total": return [{ total: d }, ...tie];
+    case "method": return [{ paymentMethod: d }, ...tie];
+    case "status": return [{ status: d }, ...tie];
+    default: return [{ createdAt: d }, { id: "asc" }];
+  }
+}
 
 export async function listSales(f: SalesFilter, viewer: CurrentUser) {
   const q = f.q?.trim().slice(0, 50);
@@ -48,7 +65,7 @@ export async function listSales(f: SalesFilter, viewer: CurrentUser) {
     db.sale.findMany({
       where,
       include: { cashier: { select: { name: true } }, _count: { select: { items: true } } },
-      orderBy: { createdAt: "desc" },
+      orderBy: salesOrder(f.sort ?? { key: "time", dir: "desc" }),
       skip: (page - 1) * SALES_PAGE_SIZE,
       take: SALES_PAGE_SIZE,
     }),

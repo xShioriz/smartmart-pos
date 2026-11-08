@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/server/db";
 import { audit } from "@/server/audit";
 import { BusinessError } from "@/lib/result";
+import { thaiSortedPageIds } from "@/lib/sort";
 import type { CurrentUser } from "@/server/auth/guard";
 import { uniqueViolationFields } from "@/server/prisma-errors";
 import { getSettingNumber } from "./settings";
@@ -49,14 +50,41 @@ export async function awardPoints(tx: Tx, saleId: string, perBaht?: number): Pro
 
 const memberSelect = { id: true, code: true, name: true, phone: true, email: true, points: true, totalSpent: true, isActive: true, createdAt: true } as const;
 
-export async function listMembers(opts: { q?: string; page?: number }) {
+export const MEMBER_SORT_KEYS = ["code", "name", "phone", "points", "spent", "status"] as const;
+export type MemberSortKey = (typeof MEMBER_SORT_KEYS)[number];
+
+function memberOrder(s: { key: MemberSortKey; dir: "asc" | "desc" }): Prisma.MemberOrderByWithRelationInput[] {
+  const d = s.dir;
+  switch (s.key) {
+    case "name": return [{ name: d }, { code: "asc" }];
+    case "phone": return [{ phone: d }, { code: "asc" }];
+    case "points": return [{ points: d }, { code: "asc" }];
+    case "spent": return [{ totalSpent: d }, { code: "asc" }];
+    case "status": return [{ isActive: d === "asc" ? "desc" : "asc" }, { code: "asc" }]; // asc = ใช้งานก่อน
+    default: return [{ code: d }];
+  }
+}
+
+export async function listMembers(opts: { q?: string; page?: number; sort?: { key: MemberSortKey; dir: "asc" | "desc" } }) {
   const q = opts.q?.trim().slice(0, 60);
   const where: Prisma.MemberWhereInput = q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: normalizePhone(q) } }, { code: { contains: q, mode: "insensitive" } }] } : {};
   const page = Math.max(1, opts.page ?? 1);
-  const [rows, total] = await Promise.all([
-    db.member.findMany({ where, select: memberSelect, orderBy: [{ isActive: "desc" }, { code: "asc" }], skip: (page - 1) * MEMBER_PAGE_SIZE, take: MEMBER_PAGE_SIZE }),
-    db.member.count({ where }),
-  ]);
+  let rows;
+  let total: number;
+  if (opts.sort?.key === "name") {
+    // ชื่อไทย: เรียงตามพจนานุกรมในแอป (DB เรียงตามรหัสอักขระ)
+    const all = await db.member.findMany({ where, select: { id: true, name: true, code: true } });
+    total = all.length;
+    const ids = thaiSortedPageIds(all, (m) => m.name, (m) => m.code, opts.sort.dir, page, MEMBER_PAGE_SIZE);
+    const found = await db.member.findMany({ where: { id: { in: ids } }, select: memberSelect });
+    const byId = new Map(found.map((m) => [m.id, m]));
+    rows = ids.map((id) => byId.get(id)).filter((m): m is (typeof found)[number] => !!m);
+  } else {
+    [rows, total] = await Promise.all([
+      db.member.findMany({ where, select: memberSelect, orderBy: opts.sort ? memberOrder(opts.sort) : [{ isActive: "desc" }, { code: "asc" }], skip: (page - 1) * MEMBER_PAGE_SIZE, take: MEMBER_PAGE_SIZE }),
+      db.member.count({ where }),
+    ]);
+  }
   return {
     total, page, pageCount: Math.max(1, Math.ceil(total / MEMBER_PAGE_SIZE)),
     items: rows.map((m) => ({ ...m, totalSpent: m.totalSpent.toFixed(2), createdAt: m.createdAt.toISOString() })),

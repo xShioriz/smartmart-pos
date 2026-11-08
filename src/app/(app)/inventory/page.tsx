@@ -11,14 +11,22 @@ import { PageHeader } from "@/components/shared/page-header";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/date";
 import { requirePage } from "@/server/auth/guard";
-import { listInventory, listMovements, type InventoryFilter } from "@/server/services/inventory";
+import { SortHead } from "@/components/shared/sort-head";
+import { nextSort, parseSort, type SortDir, type SortState } from "@/lib/sort";
+import { INVENTORY_SORT_KEYS, MOVEMENT_SORT_KEYS, listInventory, listMovements, sortInventory, type InventoryFilter, type InventorySortKey, type MovementSortKey } from "@/server/services/inventory";
 import { syncNotifications } from "@/server/services/notifications";
 
 const selectClass = "h-8 rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 const MOVEMENT_LABEL: Record<string, string> = { INITIAL: "ยอดยกมา", RESTOCK: "รับเข้า", SALE: "ขาย", ADJUSTMENT: "ปรับยอด", RETURN: "คืนสินค้า" };
 const FILTER_LABEL: Record<InventoryFilter, string> = { all: "ทั้งหมด", low: "ใกล้หมด", out: "หมด", near_expiry: "ใกล้หมดอายุ", expired: "มีล็อตหมดอายุ" };
 
-type SP = { tab?: string; q?: string; filter?: string; type?: string; page?: string };
+type SP = { tab?: string; q?: string; filter?: string; type?: string; page?: string; sort?: string; dir?: string };
+
+function qs(params: Record<string, string | undefined>) {
+  const u = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) u.set(k, v);
+  return `/inventory?${u.toString()}`;
+}
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<SP> }) {
   const user = await requirePage(["ADMIN", "CASHIER"]);
@@ -47,19 +55,26 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
           </Link>
         ))}
       </div>
-      {tab === "stock" && <StockTab q={q} filter={z.enum(["all", "low", "out", "near_expiry", "expired"]).catch("all").parse(sp.filter)} isAdmin={isAdmin} />}
-      {tab === "movements" && <MovementsTab type={z.enum(["INITIAL", "RESTOCK", "SALE", "ADJUSTMENT", "RETURN"]).safeParse(sp.type).data} page={z.coerce.number().int().min(1).catch(1).parse(sp.page)} />}
+      {tab === "stock" && <StockTab q={q} filter={z.enum(["all", "low", "out", "near_expiry", "expired"]).catch("all").parse(sp.filter)} isAdmin={isAdmin} sort={parseSort(INVENTORY_SORT_KEYS, sp, { key: "name", dir: "asc" })} />}
+      {tab === "movements" && <MovementsTab type={z.enum(["INITIAL", "RESTOCK", "SALE", "ADJUSTMENT", "RETURN"]).safeParse(sp.type).data} page={z.coerce.number().int().min(1).catch(1).parse(sp.page)} sort={parseSort(MOVEMENT_SORT_KEYS, sp, { key: "time", dir: "desc" })} />}
     </>
   );
 }
 
-async function StockTab({ q, filter, isAdmin }: { q?: string; filter: InventoryFilter; isAdmin: boolean }) {
+async function StockTab({ q, filter, isAdmin, sort }: { q?: string; filter: InventoryFilter; isAdmin: boolean; sort: SortState<InventorySortKey> }) {
   if (isAdmin) await syncNotifications();
-  const { rows, nearDays } = await listInventory({ q, filter, includeInactive: false });
+  const { rows: unsorted, nearDays } = await listInventory({ q, filter, includeInactive: false });
+  const rows = sortInventory(unsorted, sort);
+  const head = (key: InventorySortKey, label: string, right = false, firstDir: SortDir = "asc") => {
+    const n = nextSort(sort, key, firstDir);
+    return <SortHead label={label} right={right} active={sort.key === key ? sort.dir : null} href={qs({ tab: "stock", q, filter: filter === "all" ? undefined : filter, sort: n.key, dir: n.dir })} />;
+  };
   return (
     <>
       <form className="mb-4 flex flex-wrap items-center gap-2" role="search">
         <input type="hidden" name="tab" value="stock" />
+        <input type="hidden" name="sort" value={sort.key} />
+        <input type="hidden" name="dir" value={sort.dir} />
         <Input name="q" defaultValue={q ?? ""} placeholder="ค้นหา SKU / บาร์โค้ด / ชื่อ" aria-label="ค้นหาสินค้า" className="w-64" />
         <select name="filter" defaultValue={filter} aria-label="ตัวกรอง" className={selectClass}>
           {(Object.keys(FILTER_LABEL) as InventoryFilter[]).map((k) => <option key={k} value={k}>{FILTER_LABEL[k]}</option>)}
@@ -74,9 +89,9 @@ async function StockTab({ q, filter, isAdmin }: { q?: string; filter: InventoryF
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>SKU</TableHead><TableHead>ชื่อสินค้า</TableHead><TableHead>หมวดหมู่</TableHead>
-                <TableHead className="text-right">คงเหลือ</TableHead><TableHead className="text-right">ขายได้</TableHead>
-                <TableHead className="text-right">ขั้นต่ำ</TableHead><TableHead>หมดอายุถัดไป</TableHead><TableHead>สถานะ</TableHead>
+                {head("sku", "SKU")}{head("name", "ชื่อสินค้า")}{head("category", "หมวดหมู่")}
+                {head("stock", "คงเหลือ", true, "desc")}{head("sellable", "ขายได้", true, "desc")}
+                {head("min", "ขั้นต่ำ", true, "desc")}{head("expiry", "หมดอายุถัดไป")}{head("status", "สถานะ")}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -106,13 +121,20 @@ async function StockTab({ q, filter, isAdmin }: { q?: string; filter: InventoryF
   );
 }
 
-async function MovementsTab({ type, page }: { type?: string; page: number }) {
-  const data = await listMovements({ type, page });
-  const href = (p: number) => `/inventory?tab=movements${type ? `&type=${type}` : ""}${p > 1 ? `&page=${p}` : ""}`;
+async function MovementsTab({ type, page, sort }: { type?: string; page: number; sort: SortState<MovementSortKey> }) {
+  const data = await listMovements({ type, page, sort });
+  const isDefault = sort.key === "time" && sort.dir === "desc";
+  const href = (p: number) => qs({ tab: "movements", type, sort: isDefault ? undefined : sort.key, dir: isDefault ? undefined : sort.dir, page: p > 1 ? String(p) : undefined });
+  const head = (key: MovementSortKey, label: string, right = false, firstDir: SortDir = "asc") => {
+    const n = nextSort(sort, key, firstDir);
+    return <SortHead label={label} right={right} active={sort.key === key ? sort.dir : null} href={qs({ tab: "movements", type, sort: n.key, dir: n.dir })} />;
+  };
   return (
     <>
       <form className="mb-4 flex items-center gap-2">
         <input type="hidden" name="tab" value="movements" />
+        <input type="hidden" name="sort" value={sort.key} />
+        <input type="hidden" name="dir" value={sort.dir} />
         <select name="type" defaultValue={type ?? ""} aria-label="ประเภท" className={selectClass}>
           <option value="">ทุกประเภท</option>
           {Object.entries(MOVEMENT_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -126,8 +148,8 @@ async function MovementsTab({ type, page }: { type?: string; page: number }) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>เวลา</TableHead><TableHead>สินค้า</TableHead><TableHead>ล็อต</TableHead><TableHead>ประเภท</TableHead>
-                <TableHead className="text-right">เปลี่ยนแปลง</TableHead><TableHead className="text-right">คงเหลือหลังรายการ</TableHead><TableHead>หมายเหตุ</TableHead><TableHead>โดย</TableHead>
+                {head("time", "เวลา", false, "desc")}{head("product", "สินค้า")}<TableHead>ล็อต</TableHead>{head("type", "ประเภท")}
+                {head("change", "เปลี่ยนแปลง", true, "desc")}{head("balance", "คงเหลือหลังรายการ", true, "desc")}<TableHead>หมายเหตุ</TableHead><TableHead>โดย</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

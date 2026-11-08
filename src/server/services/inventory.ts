@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "@/server/db";
 import { todayBangkokKey } from "@/lib/date";
+import { compareText } from "@/lib/sort";
 import { getNearExpiryDays } from "./settings";
 
 const keyOf = (d: Date) => d.toISOString().slice(0, 10);
@@ -27,6 +28,36 @@ export type InventoryRow = {
   stockQty: number; sellableQty: number; minStock: number; status: StockStatus;
   expiredQty: number; nearExpiryQty: number; nextExpiry: string | null;
 };
+
+export const INVENTORY_SORT_KEYS = ["sku", "name", "category", "stock", "sellable", "min", "expiry", "status"] as const;
+export type InventorySortKey = (typeof INVENTORY_SORT_KEYS)[number];
+
+/** ความเร่งด่วนของสถานะ (น้อย = เร่งด่วนกว่า): หมด → มีล็อตหมดอายุ → ใกล้หมด → ใกล้หมดอายุ → ปกติ */
+export const statusRank = (r: Pick<InventoryRow, "status" | "expiredQty" | "nearExpiryQty">) =>
+  r.status === "OUT" ? 0 : r.expiredQty > 0 ? 1 : r.status === "LOW" ? 2 : r.nearExpiryQty > 0 ? 3 : 4;
+
+/** เรียงแถวคงเหลือ (ฟังก์ชันล้วน ทดสอบได้); วันหมดอายุที่ว่างอยู่ท้ายเสมอทั้งสองทิศ */
+export function sortInventory(rows: InventoryRow[], sort: { key: InventorySortKey; dir: "asc" | "desc" }): InventoryRow[] {
+  const sign = sort.dir === "asc" ? 1 : -1;
+  const byName = (a: InventoryRow, b: InventoryRow) => compareText(a.name, b.name) || compareText(a.sku, b.sku);
+  return [...rows].sort((a, b) => {
+    switch (sort.key) {
+      case "sku": return sign * compareText(a.sku, b.sku) || byName(a, b);
+      case "name": return sign * compareText(a.name, b.name) || compareText(a.sku, b.sku);
+      case "category": return sign * compareText(a.categoryName, b.categoryName) || byName(a, b);
+      case "stock": return sign * (a.stockQty - b.stockQty) || byName(a, b);
+      case "sellable": return sign * (a.sellableQty - b.sellableQty) || byName(a, b);
+      case "min": return sign * (a.minStock - b.minStock) || byName(a, b);
+      case "status": return sign * (statusRank(a) - statusRank(b)) || byName(a, b);
+      case "expiry": {
+        if (a.nextExpiry === b.nextExpiry) return byName(a, b);
+        if (a.nextExpiry === null) return 1;
+        if (b.nextExpiry === null) return -1;
+        return sign * (a.nextExpiry < b.nextExpiry ? -1 : 1);
+      }
+    }
+  });
+}
 
 export async function listInventory(opts: { q?: string; filter?: InventoryFilter; includeInactive?: boolean }) {
   const q = opts.q?.trim().slice(0, 100);
@@ -95,7 +126,22 @@ export async function getProductStock(productId: string, includeCost: boolean) {
 
 export const MOVEMENT_PAGE_SIZE = 30;
 
-export async function listMovements(opts: { productId?: string; type?: string; page?: number }) {
+export const MOVEMENT_SORT_KEYS = ["time", "product", "type", "change", "balance"] as const;
+export type MovementSortKey = (typeof MOVEMENT_SORT_KEYS)[number];
+
+function movementOrder(sort: { key: MovementSortKey; dir: "asc" | "desc" }): Prisma.StockMovementOrderByWithRelationInput[] {
+  const d = sort.dir;
+  const tie: Prisma.StockMovementOrderByWithRelationInput[] = [{ createdAt: "desc" }, { id: "asc" }];
+  switch (sort.key) {
+    case "product": return [{ product: { name: d } }, ...tie];
+    case "type": return [{ type: d }, ...tie];
+    case "change": return [{ quantityChange: d }, ...tie];
+    case "balance": return [{ balanceAfter: d }, ...tie];
+    default: return [{ createdAt: d }, { id: "asc" }];
+  }
+}
+
+export async function listMovements(opts: { productId?: string; type?: string; page?: number; sort?: { key: MovementSortKey; dir: "asc" | "desc" } }) {
   const where: Prisma.StockMovementWhereInput = {
     ...(opts.productId && { productId: opts.productId }),
     ...(opts.type && { type: opts.type as Prisma.StockMovementWhereInput["type"] }),
@@ -105,7 +151,7 @@ export async function listMovements(opts: { productId?: string; type?: string; p
     db.stockMovement.findMany({
       where,
       include: { product: { select: { sku: true, name: true, unit: true } }, batch: { select: { batchNo: true } }, createdBy: { select: { name: true } } },
-      orderBy: { createdAt: "desc" },
+      orderBy: movementOrder(opts.sort ?? { key: "time", dir: "desc" }),
       skip: (page - 1) * MOVEMENT_PAGE_SIZE,
       take: MOVEMENT_PAGE_SIZE,
     }),

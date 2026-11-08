@@ -5,11 +5,29 @@ import { D } from "@/lib/money";
 import { BusinessError } from "@/lib/result";
 import type { CurrentUser } from "@/server/auth/guard";
 import { uniqueViolationFields } from "@/server/prisma-errors";
+import { thaiSortedPageIds } from "@/lib/sort";
 import { receiveBatch } from "./stock";
 
 export const PRODUCT_PAGE_SIZE = 20;
 
-export type ProductFilters = { q?: string; categoryId?: string; status?: "all" | "active" | "inactive"; page?: number };
+export const PRODUCT_SORT_KEYS = ["sku", "name", "category", "cost", "price", "stock", "status"] as const;
+export type ProductSortKey = (typeof PRODUCT_SORT_KEYS)[number];
+
+export type ProductFilters = { q?: string; categoryId?: string; status?: "all" | "active" | "inactive"; page?: number; sort?: { key: ProductSortKey; dir: "asc" | "desc" } };
+
+function productOrder(s: { key: ProductSortKey; dir: "asc" | "desc" }): Prisma.ProductOrderByWithRelationInput[] {
+  const d = s.dir;
+  const tie: Prisma.ProductOrderByWithRelationInput[] = [{ name: "asc" }, { sku: "asc" }];
+  switch (s.key) {
+    case "sku": return [{ sku: d }];
+    case "category": return [{ category: { name: d } }, ...tie];
+    case "cost": return [{ costPrice: d }, ...tie];
+    case "price": return [{ price: d }, ...tie];
+    case "stock": return [{ stockQty: d }, ...tie];
+    case "status": return [{ isActive: d === "asc" ? "desc" : "asc" }, ...tie]; // asc = ใช้งานก่อน
+    default: return [{ name: d }, { sku: "asc" }];
+  }
+}
 
 export async function listProducts(f: ProductFilters) {
   const q = f.q?.trim().slice(0, 100);
@@ -26,16 +44,25 @@ export async function listProducts(f: ProductFilters) {
     ...(f.status === "inactive" && { isActive: false }),
   };
   const page = Math.max(1, f.page ?? 1);
-  const [rows, total] = await Promise.all([
-    db.product.findMany({
-      where,
-      include: { category: { select: { name: true } } },
-      orderBy: [{ name: "asc" }, { sku: "asc" }],
-      skip: (page - 1) * PRODUCT_PAGE_SIZE,
-      take: PRODUCT_PAGE_SIZE,
-    }),
-    db.product.count({ where }),
-  ]);
+  const sort = f.sort ?? { key: "name" as const, dir: "asc" as const };
+  const include = { category: { select: { name: true } } } as const;
+  let rows;
+  let total: number;
+  if (sort.key === "name" || sort.key === "category") {
+    // คอลัมน์ข้อความไทย: เรียงตามพจนานุกรมในแอป (DB เรียงตามรหัสอักขระ สระนำจะไปอยู่ท้าย)
+    const all = await db.product.findMany({ where, select: { id: true, name: true, sku: true, category: { select: { name: true } } } });
+    total = all.length;
+    const text = sort.key === "name" ? (p: (typeof all)[number]) => p.name : (p: (typeof all)[number]) => p.category.name;
+    const ids = thaiSortedPageIds(all, text, (p) => `${p.name} ${p.sku}`, sort.dir, page, PRODUCT_PAGE_SIZE);
+    const found = await db.product.findMany({ where: { id: { in: ids } }, include });
+    const byId = new Map(found.map((p) => [p.id, p]));
+    rows = ids.map((id) => byId.get(id)).filter((p): p is (typeof found)[number] => !!p);
+  } else {
+    [rows, total] = await Promise.all([
+      db.product.findMany({ where, include, orderBy: productOrder(sort), skip: (page - 1) * PRODUCT_PAGE_SIZE, take: PRODUCT_PAGE_SIZE }),
+      db.product.count({ where }),
+    ]);
+  }
   // Decimal → string ก่อนส่งให้ Client Component
   const items = rows.map((p) => ({
     id: p.id,
