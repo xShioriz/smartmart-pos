@@ -30,10 +30,10 @@ export function MobileNav({ role }: { role: Role }) {
       {open && (
         <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="เมนูหลัก">
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="ปิดเมนู" onClick={() => setOpen(false)} />
-          <nav className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-card shadow-xl">
-            <div className="flex h-14 items-center justify-between border-b px-4">
+          <nav className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-sidebar text-sidebar-foreground shadow-xl">
+            <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
               <span className="flex items-center gap-2 font-semibold">
-                <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><ShoppingBasket className="size-4" /></span>
+                <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground"><ShoppingBasket className="size-4" /></span>
                 SmartMart POS
               </span>
               <button type="button" onClick={() => setOpen(false)} aria-label="ปิดเมนู" className="flex size-10 items-center justify-center rounded-lg hover:bg-muted"><X className="size-5" /></button>
@@ -43,7 +43,7 @@ export function MobileNav({ role }: { role: Role }) {
                 const active = pathname === href || pathname.startsWith(href + "/");
                 return (
                   <li key={href}>
-                    <Link href={href} onClick={() => setOpen(false)} className={cn("flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm", active ? "bg-green-50 font-medium text-green-700" : "text-foreground/80 hover:bg-muted")}>
+                    <Link href={href} onClick={() => setOpen(false)} aria-current={active ? "page" : undefined} className={cn("flex min-h-11 items-center gap-3 rounded-md px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/30", active ? "bg-primary/10 font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
                       <Icon className="size-4 shrink-0" /> {label}
                     </Link>
                   </li>
