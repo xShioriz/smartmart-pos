@@ -42,3 +42,5 @@ npm run dev
 | `ALLOW_DEMO_SEED=1 npx tsx scripts/seed-demo.mts` | สร้างบิลเงินสดย้อนหลัง 30 วันสำหรับสาธิต (เพิ่มข้อมูลถาวร) |
 
 การ deploy ดู [docs/DEPLOY.md](docs/DEPLOY.md) · การตัดสินใจออกแบบดู [docs/DECISIONS.md](docs/DECISIONS.md)
+
+เอกสารนำเสนอ: [แผนภาพ (Use Case / ER)](docs/presentation/DIAGRAMS.md) · [สรุปผลทดสอบ](docs/presentation/TEST_SUMMARY.md) · [สคริปต์สาธิต](docs/presentation/DEMO_SCRIPT.md)
