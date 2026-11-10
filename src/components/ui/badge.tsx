@@ -18,6 +18,10 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // ป้ายสถานะตามความหมาย (ใช้ทั้งระบบ): ตัวอักษรเข้มบนพื้นอ่อน คอนทราสต์ ≥ 7:1 — ต้องมีข้อความกำกับเสมอ ไม่ใช้สีอย่างเดียว
+        success: "bg-emerald-50 text-emerald-800",
+        warning: "bg-amber-50 text-amber-800",
+        caution: "bg-orange-50 text-orange-800",
       },
     },
     defaultVariants: {

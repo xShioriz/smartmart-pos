@@ -71,7 +71,7 @@ export function SettingsForm({ initial, payment }: { initial: SettingsInput; pay
             <p className="flex flex-wrap items-center gap-2 text-sm">
               {payment.enabled ? (
                 <>
-                  <Badge className="bg-green-100 text-green-800">พร้อมใช้งาน</Badge>
+                  <Badge variant="success">พร้อมใช้งาน</Badge>
                   <Badge variant={payment.environment === "SANDBOX" ? "secondary" : "default"}>{payment.environment === "SANDBOX" ? "SANDBOX — โหมดทดสอบ ไม่ใช่เงินจริง" : "Production"}</Badge>
                 </>
               ) : <Badge variant="destructive">ยังใช้ไม่ได้</Badge>}

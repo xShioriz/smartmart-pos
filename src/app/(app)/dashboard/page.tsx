@@ -8,14 +8,17 @@ import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/money";
 import { requirePage } from "@/server/auth/guard";
 import { compareDays } from "@/server/services/bi";
-import { loadDashboard } from "@/server/services/dashboard";
+import { todayBangkokKey } from "@/lib/date";
+import { loadDashboard, resolveDashboardRange } from "@/server/services/dashboard";
 
 const card = "rounded-xl border bg-card p-4 sm:p-5";
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ range?: string; from?: string; to?: string }> }) {
   const user = await requirePage(["ADMIN"]);
-  const range = (await searchParams).range === "30" ? 30 : 7;
-  const d = await loadDashboard(range);
+  const sp = await searchParams;
+  const resolved = resolveDashboardRange(sp, todayBangkokKey());
+  const d = await loadDashboard(resolved.range);
+  const range = d.rangeDays;
   const cmp = compareDays(Number(d.todayNet), Number(d.yesterdayNet));
   const noSales = Number(d.rangeTotals.gross) === 0;
 
@@ -54,10 +57,17 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </div>
             <div className="flex gap-1 rounded-md bg-muted p-0.5 text-sm" role="tablist" aria-label="ช่วงเวลา">
               {([7, 30] as const).map((n) => (
-                <Link key={n} href={`/dashboard?range=${n}`} role="tab" aria-selected={range === n} className={cn("rounded-[4px] px-3 py-1 transition-colors", range === n ? "bg-card font-medium text-primary shadow-sm" : "text-muted-foreground hover:text-foreground")}>{n} วัน</Link>
+                <Link key={n} href={`/dashboard?range=${n}`} role="tab" aria-selected={resolved.preset === n} className={cn("rounded-[4px] px-3 py-1 transition-colors", resolved.preset === n ? "bg-card font-medium text-primary shadow-sm" : "text-muted-foreground hover:text-foreground")}>{n} วัน</Link>
               ))}
             </div>
           </div>
+          <form className="mb-3 flex flex-wrap items-center gap-2 text-sm" aria-label="เลือกช่วงวันที่เอง">
+            <input type="date" name="from" defaultValue={resolved.range.from} max={d.today} aria-label="ตั้งแต่วันที่" className="h-8 rounded-md border border-input bg-card px-2 text-sm" />
+            <span className="text-muted-foreground">ถึง</span>
+            <input type="date" name="to" defaultValue={resolved.range.to} max={d.today} aria-label="ถึงวันที่" className="h-8 rounded-md border border-input bg-card px-2 text-sm" />
+            <button type="submit" className="h-8 rounded-md border bg-card px-3 font-medium hover:bg-muted">ดูช่วงนี้</button>
+            {resolved.invalid && <span className="text-xs text-red-600" role="alert">ช่วงวันที่ไม่ถูกต้อง (ต้องไม่เกินวันนี้ และไม่เกิน 366 วัน) — แสดง {range} วันล่าสุดแทน</span>}
+          </form>
           {noSales ? (
             <p className="flex h-64 items-center justify-center text-sm text-muted-foreground">ยังไม่มียอดขายในช่วงนี้</p>
           ) : <SalesChart data={d.chart} />}
@@ -99,7 +109,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             {d.unread > 0 && <Link href="/notifications" className="inline-flex items-center gap-1 text-xs text-primary hover:underline"><Bell className="size-3" /> แจ้งเตือนใหม่ {d.unread}</Link>}
           </div>
           <div className="mb-3 flex flex-wrap gap-2 text-xs">
-            <Badge className="bg-orange-100 text-orange-800"><CalendarClock className="size-3" /> ใกล้หมดอายุ {d.nearExpiryProducts}</Badge>
+            <Badge variant="caution"><CalendarClock className="size-3" /> ใกล้หมดอายุ {d.nearExpiryProducts}</Badge>
             <Badge variant={d.expiredProducts > 0 ? "destructive" : "outline"}>มีล็อตหมดอายุ {d.expiredProducts}</Badge>
           </div>
           {d.lowList.length === 0 ? (

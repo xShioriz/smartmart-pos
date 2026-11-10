@@ -57,7 +57,7 @@ export function daysOfCover(stock: number, avgDailyUnits: number): number | null
 export type StockCandidate = { name: string; sku: string; stock: number; minStock: number; avgDaily: number };
 
 /** เกณฑ์เตือนสั่งเพิ่ม: เหลือขายได้ < coverDays วัน หรือ สต็อก ≤ ขั้นต่ำ; แนะนำจำนวนให้พอ targetDays วัน */
-export function restockSuggestions(list: StockCandidate[], opts: { coverDays?: number; targetDays?: number } = {}) {
+export function restockSuggestions<T extends StockCandidate>(list: T[], opts: { coverDays?: number; targetDays?: number } = {}) {
   const coverDays = opts.coverDays ?? 7;
   const targetDays = opts.targetDays ?? 14;
   return list
@@ -188,4 +188,36 @@ export async function loadInsights(): Promise<{ insights: Insight[]; generatedFo
   };
 
   return { insights: buildInsights({ today, series7: report7.rows, top7, stock, slow, expiring, nearDays }), generatedFor: today };
+}
+
+/* ───────────── รายการสั่งซื้อที่แนะนำ (ใช้สูตรเดียวกับ Smart BI แต่รวมสินค้าที่หมดสต็อกด้วย) ───────────── */
+
+export type ReorderCandidate = StockCandidate & { unit: string; category: string; costPrice: Prisma.Decimal };
+
+/**
+ * จำนวนที่ควรสั่ง = ยอดขายเฉลี่ย/วัน × 14 − สต็อก (สูตรเดียวกับ Smart BI)
+ * ถ้าต่ำกว่าขั้นต่ำแต่ไม่มียอดขายใน 14 วัน (สูตรให้ 0) แนะนำเติมให้ถึง 2 × ขั้นต่ำ เพื่อไม่ให้รายการเตือนแต่จำนวนเป็นศูนย์
+ */
+export function buildReorderList(list: ReorderCandidate[]) {
+  return restockSuggestions(list).map((r) => {
+    const suggest = r.suggest > 0 ? r.suggest : r.low ? Math.max(0, r.minStock * 2 - r.stock) : 0;
+    return { ...r, suggest, costPrice: r.costPrice.toFixed(2), estCost: r.costPrice.mul(suggest).toFixed(2) };
+  });
+}
+
+export async function loadReorderList() {
+  const since14 = new Date(`${lastNDays(14).from}T00:00:00+07:00`);
+  const [avgRows, products] = await Promise.all([
+    db.$queryRaw<{ productId: string; units: bigint }[]>`
+      SELECT i."productId", SUM(i.quantity - i."returnedQty") AS units
+      FROM "SaleItem" i JOIN "Sale" s ON s.id = i."saleId"
+      WHERE s.status IN ('COMPLETED','PARTIALLY_RETURNED','FULLY_RETURNED') AND s."createdAt" >= ${since14}
+      GROUP BY i."productId"`,
+    db.product.findMany({ where: { isActive: true }, select: { id: true, sku: true, name: true, unit: true, stockQty: true, minStock: true, costPrice: true, category: { select: { name: true } } } }),
+  ]);
+  const units14 = new Map(avgRows.map((r) => [r.productId, Number(r.units)]));
+  return buildReorderList(products.map((p) => ({
+    name: p.name, sku: p.sku, unit: p.unit, category: p.category.name, stock: p.stockQty, minStock: p.minStock, costPrice: p.costPrice,
+    avgDaily: (units14.get(p.id) ?? 0) / 14,
+  })));
 }

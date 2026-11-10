@@ -27,7 +27,7 @@ const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px
 
 function StockBadge({ qty, min }: { qty: number; min: number }) {
   if (qty <= 0) return <Badge variant="destructive">หมด</Badge>;
-  if (qty <= min) return <Badge className="bg-amber-100 text-amber-800">ใกล้หมด</Badge>;
+  if (qty <= min) return <Badge variant="warning">ใกล้หมด</Badge>;
   return <span className="tabular-nums">{qty.toLocaleString("th-TH")}</span>;
 }
 

@@ -43,7 +43,11 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <PageHeader title="คลังสินค้า" description={isAdmin ? "ดูคงเหลือ รับสินค้าเข้า และปรับสต็อกราย ล็อต" : "ดูจำนวนคงเหลือ (อ่านอย่างเดียว)"} />
+      <PageHeader
+        title="คลังสินค้า"
+        description={isAdmin ? "ดูคงเหลือ รับสินค้าเข้า และปรับสต็อกราย ล็อต" : "ดูจำนวนคงเหลือ (อ่านอย่างเดียว)"}
+        action={isAdmin ? <Link href="/inventory/reorder" className="inline-flex h-8 items-center rounded-md border bg-card px-3 text-sm font-medium hover:bg-muted">รายการที่ควรสั่งซื้อ</Link> : undefined}
+      />
       <div className="mb-4 flex gap-1 border-b">
         {tabs.map((t) => (
           <Link
@@ -106,9 +110,9 @@ async function StockTab({ q, filter, isAdmin, sort }: { q?: string; filter: Inve
                   <TableCell className="tabular-nums">{r.nextExpiry ?? "-"}</TableCell>
                   <TableCell className="space-x-1">
                     {r.status === "OUT" && <Badge variant="destructive">หมด</Badge>}
-                    {r.status === "LOW" && <Badge className="bg-amber-100 text-amber-800">ใกล้หมด</Badge>}
+                    {r.status === "LOW" && <Badge variant="warning">ใกล้หมด</Badge>}
                     {r.expiredQty > 0 && <Badge variant="destructive">หมดอายุ {r.expiredQty}</Badge>}
-                    {r.nearExpiryQty > 0 && <Badge className="bg-orange-100 text-orange-800">ใกล้หมดอายุ {r.nearExpiryQty}</Badge>}
+                    {r.nearExpiryQty > 0 && <Badge variant="caution">ใกล้หมดอายุ {r.nearExpiryQty}</Badge>}
                     {r.status === "OK" && r.expiredQty === 0 && r.nearExpiryQty === 0 && <Badge variant="outline">ปกติ</Badge>}
                   </TableCell>
                 </TableRow>

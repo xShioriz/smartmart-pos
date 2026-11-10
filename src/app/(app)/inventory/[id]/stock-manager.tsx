@@ -64,7 +64,7 @@ export function StockManager({ isAdmin, productId, unit, defaultCost, batches }:
                   <TableCell>
                     {b.remainingQty === 0 ? <Badge variant="outline">หมดล็อต</Badge>
                       : b.state === "EXPIRED" ? <Badge variant="destructive">หมดอายุ (ขายไม่ได้)</Badge>
-                      : b.state === "NEAR_EXPIRY" ? <Badge className="bg-orange-100 text-orange-800">ใกล้หมดอายุ</Badge>
+                      : b.state === "NEAR_EXPIRY" ? <Badge variant="caution">ใกล้หมดอายุ</Badge>
                       : <Badge variant="outline">ปกติ</Badge>}
                   </TableCell>
                   {isAdmin && (

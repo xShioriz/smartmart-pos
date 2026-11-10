@@ -332,6 +332,27 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
   await db.auditLog.deleteMany({ where: { action: 'REPORT_EXPORT', userId: admin.id, createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) } } });
 }
 
+// 4i) รายการสั่งซื้อ + CSV restock + หน้าที่เรียงได้ + ช่วงวันที่ Dashboard (v1.5)
+{
+  let r = await get('/reports/export?type=restock');
+  check('ไม่ล็อกอิน: CSV restock → redirect /login', r.status >= 300 && r.status < 400 && loc(r).includes('/login'), `${r.status}`);
+  r = await get('/reports/export?type=restock', ct);
+  check('CASHIER: CSV restock → 403', r.status === 403, `${r.status}`);
+  r = await get('/reports/export?type=restock', at);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  check('ADMIN: CSV restock → 200 text/csv + BOM', r.status === 200 && (r.headers.get('content-type') || '').includes('text/csv') && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf, `${r.status}`);
+  check('CSV restock มีหัวคอลัมน์ "จำนวนที่ควรสั่ง"', new TextDecoder().decode(buf).includes('จำนวนที่ควรสั่ง'));
+  r = await get('/reports/export?type=daily', at);
+  check('CSV daily ที่ไม่ใส่ from/to → 400 (ยังตรวจพารามิเตอร์)', r.status === 400, `${r.status}`);
+  check('CASHIER เข้า /inventory/reorder → redirect', (await body('/inventory/reorder', ct)).includes('NEXT_REDIRECT'));
+  check('ADMIN เข้า /inventory/reorder ได้', (await get('/inventory/reorder', at)).status === 200);
+  for (const p of ['/categories?sort=count&dir=desc', '/promotions?sort=discount&dir=desc', '/users?sort=name&dir=asc', '/shifts?sort=diff&dir=desc', '/products?sort=evil&dir=zzz', '/dashboard?from=2026-01-01&to=2026-01-31', '/dashboard?from=bad&to=worse', '/dashboard?from=2099-01-01&to=2099-02-01']) {
+    check(`ADMIN เปิด ${p} ได้ (ค่าแปลกไม่ทำให้ error)`, (await get(p, at)).status === 200);
+  }
+  check('CASHIER เข้า /categories?sort=name → redirect', (await body('/categories?sort=name&dir=asc', ct)).includes('NEXT_REDIRECT'));
+  await db.auditLog.deleteMany({ where: { action: 'REPORT_EXPORT', userId: admin.id, createdAt: { gt: new Date(Date.now() - 10 * 60 * 1000) } } });
+}
+
 // 5) สร้างจริง → ปิดบัญชี → session เดิมใช้ไม่ได้ทันที → Audit
 a = await act("createUserAction", { ...newUser, role: "CASHIER" }, at);
 const created = await db.user.findUnique({ where: { email: newUser.email } });

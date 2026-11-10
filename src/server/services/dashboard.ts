@@ -1,7 +1,7 @@
 import { db } from "@/server/db";
 import { todayBangkokKey } from "@/lib/date";
 import { loadInsights } from "./bi";
-import { dayTotals, lastNDays, salesReport, topProducts } from "./reports";
+import { dayTotals, daysBetween, lastNDays, salesReport, topProducts, type DateRange } from "./reports";
 import { listInventory } from "./inventory";
 import { unreadNotificationCount } from "./notifications";
 
@@ -11,9 +11,27 @@ function yesterdayOf(day: string) {
   return d.toISOString().slice(0, 10);
 }
 
-export async function loadDashboard(rangeDays: 7 | 30) {
+const MAX_RANGE_DAYS = 366;
+const isRealDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T00:00:00.000Z`).toISOString().slice(0, 10) === s;
+
+export type DashboardRangeInput = { range?: string; from?: string; to?: string };
+
+/**
+ * ช่วงวันของกราฟ: ใช้ from/to ที่ผู้ใช้เลือกถ้าถูกต้องทั้งหมด (วันจริง, from ≤ to ≤ วันนี้, ไม่เกิน 366 วัน)
+ * มิฉะนั้นกลับไปใช้ค่าสำเร็จรูป 7/30 วัน (range=30 → 30 วัน ที่เหลือ 7 วัน); invalid = true เมื่อผู้ใช้ส่งช่วงมาแต่ใช้ไม่ได้
+ */
+export function resolveDashboardRange(input: DashboardRangeInput, today: string): { range: DateRange; preset: 7 | 30 | null; invalid: boolean } {
+  const preset: 7 | 30 = input.range === "30" ? 30 : 7;
+  const fallback = { range: lastNDays(preset, new Date(`${today}T12:00:00+07:00`)), preset, invalid: false };
+  if (input.from === undefined && input.to === undefined) return fallback;
+  const { from, to } = input;
+  if (!from || !to || !isRealDate(from) || !isRealDate(to) || from > to || to > today || daysBetween({ from, to }).length > MAX_RANGE_DAYS) return { ...fallback, invalid: true };
+  return { range: { from, to }, preset: null, invalid: false };
+}
+
+export async function loadDashboard(range: DateRange) {
   const today = todayBangkokKey();
-  const range = lastNDays(rangeDays);
+  const rangeDays = daysBetween(range).length;
   const [todayRow, yRow, series, top, products, counts, near, expired, unread, bi] = await Promise.all([
     dayTotals(today),
     dayTotals(yesterdayOf(today)),

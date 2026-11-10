@@ -138,13 +138,23 @@
   .receipt { width: 80mm !important; margin: 0 !important; padding: 4mm !important; }
 }
 
-/* จอสัมผัส (มือถือ/iPad): ปุ่มและช่องกรอกสูงอย่างน้อย 40px เพื่อกดง่าย */
+/* จอสัมผัส (มือถือ/iPad): ปุ่มและช่องกรอกสูงอย่างน้อย 44px ตามแนวทาง Apple HIG เพื่อกดง่ายและไม่พลาด */
 @media (pointer: coarse) {
   [data-slot="button"],
   [data-slot="input"] {
-    min-height: 2.5rem;
+    min-height: 2.75rem;
   }
   [data-slot="button"] {
-    min-width: 2.5rem;
+    min-width: 2.75rem;
+  }
+}
+
+/* วงแหวนโฟกัสคีย์บอร์ดที่เห็นชัดทั่วระบบ (ลิงก์/ปุ่มธรรมดาที่ไม่มีสไตล์โฟกัสของตัวเอง) */
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  [role="tab"]:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
