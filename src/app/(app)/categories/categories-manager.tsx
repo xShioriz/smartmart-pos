@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortHead } from "@/components/shared/sort-head";
+import type { SortLink } from "@/lib/sort";
 import { EmptyState } from "@/components/shared/empty-state";
 import type { ActionResult } from "@/lib/result";
 import { createCategoryAction, deleteCategoryAction, updateCategoryAction } from "./actions";
@@ -16,7 +18,7 @@ import { createCategoryAction, deleteCategoryAction, updateCategoryAction } from
 type Row = { id: string; name: string; description: string | null; productCount: number };
 type Dlg = { kind: "form"; row: Row | null } | { kind: "delete"; row: Row } | null;
 
-export function CategoriesManager({ categories, searching }: { categories: Row[]; searching: boolean }) {
+export function CategoriesManager({ categories, searching, sortLinks }: { categories: Row[]; searching: boolean; sortLinks: Record<"name" | "description" | "count", SortLink> }) {
   const [dlg, setDlg] = useState<Dlg>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,9 @@ export function CategoriesManager({ categories, searching }: { categories: Row[]
           <Table className="max-sm:[&_tr>:nth-child(2)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>ชื่อหมวดหมู่</TableHead>
-                <TableHead>คำอธิบาย</TableHead>
-                <TableHead className="text-right">จำนวนสินค้า</TableHead>
+                <SortHead label="ชื่อหมวดหมู่" {...sortLinks.name} />
+                <SortHead label="คำอธิบาย" {...sortLinks.description} />
+                <SortHead label="จำนวนสินค้า" right {...sortLinks.count} />
                 <TableHead className="text-right">จัดการ</TableHead>
               </TableRow>
             </TableHeader>

@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortHead } from "@/components/shared/sort-head";
+import type { SortLink } from "@/lib/sort";
 import { EmptyState } from "@/components/shared/empty-state";
 import { formatMoney } from "@/lib/money";
 import { formatDateTime, toBangkokInput } from "@/lib/date";
@@ -35,7 +37,7 @@ const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px
 const discountLabel = (p: Item) => (p.discountType === "PERCENT" ? `${Number(p.value)}%` : p.scope === "BILL" ? formatMoney(p.value) : `${formatMoney(p.value)}/หน่วย`);
 const fmtLocal = (iso: string) => formatDateTime(new Date(iso));
 
-export function PromotionsManager({ items, products, categories }: { items: Item[]; products: { id: string; sku: string; name: string }[]; categories: { id: string; name: string }[] }) {
+export function PromotionsManager({ items, products, categories, sortLinks }: { sortLinks: Record<"name" | "scope" | "target" | "discount" | "min" | "period" | "status", SortLink>; items: Item[]; products: { id: string; sku: string; name: string }[]; categories: { id: string; name: string }[] }) {
   const [dlg, setDlg] = useState<Dlg>(null);
   const [scope, setScope] = useState<"PRODUCT" | "CATEGORY" | "BILL">("BILL");
   const [pending, start] = useTransition();
@@ -64,8 +66,8 @@ export function PromotionsManager({ items, products, categories }: { items: Item
           <Table className="max-sm:[&_tr>:nth-child(2)]:hidden max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>ชื่อโปรโมชั่น</TableHead><TableHead>ประเภท</TableHead><TableHead>เป้าหมาย</TableHead><TableHead className="text-right">ส่วนลด</TableHead>
-                <TableHead className="text-right">ขั้นต่ำ</TableHead><TableHead>ช่วงเวลา</TableHead><TableHead>สถานะ</TableHead><TableHead className="text-right">จัดการ</TableHead>
+                <SortHead label="ชื่อโปรโมชั่น" {...sortLinks.name} /><SortHead label="ประเภท" {...sortLinks.scope} /><SortHead label="เป้าหมาย" {...sortLinks.target} /><SortHead label="ส่วนลด" right {...sortLinks.discount} />
+                <SortHead label="ขั้นต่ำ" right {...sortLinks.min} /><SortHead label="ช่วงเวลา" {...sortLinks.period} /><SortHead label="สถานะ" {...sortLinks.status} /><TableHead className="text-right">จัดการ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

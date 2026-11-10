@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareText, nextSort, parseSort } from "@/lib/sort";
+import { compareText, nextSort, parseSort, sortRows } from "@/lib/sort";
 import { sortInventory, statusRank, type InventoryRow } from "@/server/services/inventory";
 
 const KEYS = ["a", "b"] as const;
@@ -21,6 +21,31 @@ describe("parseSort / nextSort", () => {
   it("เรียงภาษาไทยตามพจนานุกรม และเลขตามค่า", () => {
     expect(["ไข่", "กาแฟ", "ข้าว"].sort(compareText)).toEqual(["กาแฟ", "ข้าว", "ไข่"]);
     expect(["SKU10", "SKU9", "SKU1"].sort(compareText)).toEqual(["SKU1", "SKU9", "SKU10"]);
+  });
+});
+
+describe("sortRows", () => {
+  const rows = [
+    { n: "ข้าว", v: 5 as number | null },
+    { n: "กาแฟ", v: null },
+    { n: "ไข่", v: 20 },
+    { n: "นม", v: 5 },
+  ];
+  const get = { n: (r: (typeof rows)[number]) => r.n, v: (r: (typeof rows)[number]) => r.v };
+  const names = (r: typeof rows) => r.map((x) => x.n).join(",");
+
+  it("ข้อความเรียงตามพจนานุกรมไทย", () => {
+    expect(names(sortRows(rows, { key: "n", dir: "asc" }, get))).toBe("กาแฟ,ข้าว,ไข่,นม");
+    expect(names(sortRows(rows, { key: "n", dir: "desc" }, get))).toBe("นม,ไข่,ข้าว,กาแฟ");
+  });
+  it("ตัวเลขเรียงตามค่า ค่าว่างอยู่ท้ายเสมอทั้งสองทิศ และค่าเท่ากันเรียงตาม tie", () => {
+    expect(names(sortRows(rows, { key: "v", dir: "asc" }, get, (r) => r.n))).toBe("ข้าว,นม,ไข่,กาแฟ");
+    expect(names(sortRows(rows, { key: "v", dir: "desc" }, get, (r) => r.n))).toBe("ไข่,ข้าว,นม,กาแฟ");
+  });
+  it("ไม่แก้อาร์เรย์เดิม", () => {
+    const copy = [...rows];
+    sortRows(rows, { key: "v", dir: "asc" }, get);
+    expect(rows).toEqual(copy);
   });
 });
 

@@ -6,16 +6,28 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { formatDateTime } from "@/lib/date";
 import { formatMoney } from "@/lib/money";
+import { parseSort, sortLinks, sortRows } from "@/lib/sort";
+import { SortHead } from "@/components/shared/sort-head";
 import { requirePage } from "@/server/auth/guard";
 import { db } from "@/server/db";
 import { computeFigures, getOpenShift, listShifts } from "@/server/services/shifts";
 import { CloseShiftForm, OpenShiftForm } from "./shift-forms";
 
-export default async function ShiftsPage() {
+const KEYS = ["no", "opened", "closed", "opening", "expected", "counted", "diff"] as const;
+
+export default async function ShiftsPage({ searchParams }: { searchParams: Promise<{ sort?: string; dir?: string }> }) {
   const user = await requirePage(["ADMIN", "CASHIER"]);
+  const sp = await searchParams;
+  const sort = parseSort(KEYS, sp, { key: "no", dir: "desc" });
   const open = await getOpenShift();
   const fig = open ? await computeFigures(db, open.openingCash, open.openedAt, new Date()) : null;
-  const history = user.role === "ADMIN" ? await listShifts(30) : [];
+  const historyRaw = user.role === "ADMIN" ? await listShifts(30) : [];
+  const num = (v: unknown) => (v === null || v === undefined ? null : Number(v));
+  const history = sortRows(historyRaw, sort, {
+    no: (s) => s.shiftNo, opened: (s) => s.openedAt.getTime(), closed: (s) => s.closedAt?.getTime() ?? null,
+    opening: (s) => num(s.openingCash), expected: (s) => num(s.expectedCash), counted: (s) => num(s.countedCash), diff: (s) => num(s.difference),
+  }, (s) => String(s.shiftNo));
+  const links = sortLinks(KEYS, sort, (s) => `/shifts?sort=${s.key}&dir=${s.dir}`, ["no", "opened", "closed", "opening", "expected", "counted", "diff"]);
 
   return (
     <>
@@ -55,9 +67,9 @@ export default async function ShiftsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead>กะ</TableHead><TableHead>เปิด</TableHead><TableHead>ปิด</TableHead>
-                  <TableHead className="text-right">ตั้งต้น</TableHead><TableHead className="text-right">ควรมี</TableHead><TableHead className="text-right">นับได้</TableHead>
-                  <TableHead className="text-right">ผลต่าง</TableHead><TableHead>หมายเหตุ</TableHead>
+                  <SortHead label="กะ" {...links.no} /><SortHead label="เปิด" {...links.opened} /><SortHead label="ปิด" {...links.closed} />
+                  <SortHead label="ตั้งต้น" right {...links.opening} /><SortHead label="ควรมี" right {...links.expected} /><SortHead label="นับได้" right {...links.counted} />
+                  <SortHead label="ผลต่าง" right {...links.diff} /><TableHead>หมายเหตุ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

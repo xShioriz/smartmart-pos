@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SortHead } from "@/components/shared/sort-head";
+import type { SortLink } from "@/lib/sort";
 import { EmptyState } from "@/components/shared/empty-state";
 import type { ActionResult } from "@/lib/result";
 import { createUserAction, resetPasswordAction, setUserActiveAction, updateUserAction } from "./actions";
@@ -23,7 +25,7 @@ const selectClass =
 
 type Dlg = { kind: "create" } | { kind: "edit"; user: UserRow } | { kind: "password"; user: UserRow } | { kind: "toggle"; user: UserRow } | null;
 
-export function UsersManager({ users, meId }: { users: UserRow[]; meId: string }) {
+export function UsersManager({ users, meId, sortLinks }: { users: UserRow[]; meId: string; sortLinks: Record<"name" | "email" | "role" | "status", SortLink> }) {
   const [dlg, setDlg] = useState<Dlg>(null);
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +52,10 @@ export function UsersManager({ users, meId }: { users: UserRow[]; meId: string }
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>ชื่อ</TableHead>
-                <TableHead>อีเมล</TableHead>
-                <TableHead>สิทธิ์</TableHead>
-                <TableHead>สถานะ</TableHead>
+                <SortHead label="ชื่อ" {...sortLinks.name} />
+                <SortHead label="อีเมล" {...sortLinks.email} />
+                <SortHead label="สิทธิ์" {...sortLinks.role} />
+                <SortHead label="สถานะ" {...sortLinks.status} />
                 <TableHead className="text-right">จัดการ</TableHead>
               </TableRow>
             </TableHeader>

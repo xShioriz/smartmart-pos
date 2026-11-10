@@ -27,6 +27,25 @@ export function sortLinks<K extends string>(keys: readonly K[], cur: SortState<K
 const collator = new Intl.Collator("th", { numeric: true, sensitivity: "base" });
 export const compareText = (a: string, b: string) => collator.compare(a, b);
 
+export type SortValue = string | number | null | undefined;
+
+/**
+ * เรียงแถวในแอป (ใช้กับตารางเล็กที่ไม่แบ่งหน้า): ข้อความเรียงตามพจนานุกรมไทย ตัวเลขเรียงตามค่า
+ * ค่าว่าง (null/undefined) อยู่ท้ายเสมอทั้งสองทิศ; ค่าเท่ากันเรียงตาม tie เพื่อให้ลำดับคงที่
+ */
+export function sortRows<T, K extends string>(rows: T[], sort: SortState<K>, get: Record<K, (r: T) => SortValue>, tie?: (r: T) => string): T[] {
+  const sign = sort.dir === "asc" ? 1 : -1;
+  const pick = get[sort.key];
+  const byTie = (a: T, b: T) => (tie ? compareText(tie(a), tie(b)) : 0);
+  return [...rows].sort((a, b) => {
+    const x = pick(a), y = pick(b);
+    const xe = x === null || x === undefined, ye = y === null || y === undefined;
+    if (xe || ye) return xe && ye ? byTie(a, b) : xe ? 1 : -1;
+    const c = typeof x === "number" && typeof y === "number" ? x - y : compareText(String(x), String(y));
+    return sign * c || byTie(a, b);
+  });
+}
+
 /**
  * ฐานข้อมูลเรียงตัวอักษรไทยตามรหัสอักขระ (สระนำ เ แ โ ไ ไปอยู่ท้าย) จึงเรียงคอลัมน์ข้อความไทยในแอปแทน:
  * ดึงเฉพาะ id+ข้อความทั้งหมดที่ตรงเงื่อนไข เรียง แล้วคืน id ของหน้าที่ขอ
