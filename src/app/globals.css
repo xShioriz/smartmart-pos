@@ -2,14 +2,35 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* ไม่มีโหมดมืด (DESIGN.md มีธีมเดียว): คงตัวแปรไว้ให้คลาส dark: ของ shadcn ไม่ทำงานตามค่า OS */
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * ธีม SmartMart POS ตาม DESIGN.md — ชั้นโทเคนที่เดียว
+ * ค่าสีทั้งหมดอยู่ใน :root ด้านล่าง; คอมโพเนนต์/หน้าอ้างผ่านคลาส (bg-navy, text-blue, bg-lavender-100 ...) หรือโทเคน shadcn (bg-primary ...) เท่านั้น
+ */
 @theme inline {
+  /* โทเคนแบรนด์ */
+  --color-navy: var(--navy);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-blue-deep: var(--blue-deep);
+  --color-lavender: var(--lavender);
+  --color-lavender-100: var(--lavender-100);
+  --color-lavender-50: var(--lavender-50);
+  --color-sky-soft: var(--sky-soft);
+  --color-surface: var(--surface);
+  --color-border-strong: var(--border-strong);
+  /* สีสถานะ (ต้องมีข้อความกำกับเสมอ) */
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  /* โทเคน shadcn → ชี้ไปที่โทเคนแบรนด์ */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-noto-thai), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,83 +60,84 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 6px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
-  --radius-3xl: 20px;
-  --radius-4xl: 24px;
+
+  /* ฟอนต์: เนื้อหา Noto Sans Thai, หัวข้อ/ตัวเลขเด่น/ปุ่ม Prompt (ทั้งคู่มีอักษรไทย) */
+  --font-sans: var(--font-noto-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-prompt), var(--font-noto-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+
+  /* รัศมี: ช่องกรอก/ปุ่ม 12px (rounded-lg), การ์ด 20px (rounded-xl), การ์ดเน้น 24px (rounded-2xl), pill 999px (rounded-4xl) */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 28px;
+  --radius-4xl: 999px;
+
+  --shadow-float: 0 14px 30px rgba(11, 31, 75, 0.14);
 }
 
 :root {
-  /* ธีม Genesis (v1.5): พื้นเทาอ่อน การ์ดขาวกรอบบาง อินดิโกเฉพาะส่วนที่กดได้ (ปุ่ม ลิงก์ โฟกัส เมนูที่เลือก) — ใช้ #5558ee แทน #6366f1 ของสเปก เพื่อให้ตัวอักษรขาวบนปุ่ม/ลิงก์ผ่านคอนทราสต์ 4.5:1 (#6366f1 ได้ 4.47) */
-  --background: #fafafa;
-  --foreground: #0a0a0a;
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-  --primary: #5558ee;
-  --primary-foreground: #ffffff;
-  --secondary: #f4f4f6;
-  --secondary-foreground: #0a0a0a;
-  --muted: #f4f4f6;
-  --muted-foreground: #6b6b6b;
-  --accent: #f4f4f6;
-  --accent-foreground: #0a0a0a;
-  --destructive: #ef4444;
-  --border: #e8e8ec;
-  --input: #e8e8ec;
-  --ring: #5558ee;
-  --chart-1: #5558ee;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #ef4444;
-  --chart-5: #9c9c9c;
-  --radius: 0.75rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0a0a0a;
-  --sidebar-primary: #5558ee;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f4f4f6;
-  --sidebar-accent-foreground: #0a0a0a;
-  --sidebar-border: #e8e8ec;
-  --sidebar-ring: #5558ee;
-}
+  /* ── แบรนด์ (DESIGN.md §1) ── */
+  --navy: #0b1f4b;
+  --blue: #2563ff;
+  --blue-soft: #7fa2ff; /* บนพื้น navy เท่านั้น */
+  --blue-deep: #1e46b8; /* ปลาย gradient / สถานะ hover ปุ่มหลัก */
+  --lavender: #c9c2f5; /* ตกแต่ง/แท่งกราฟรอง/บนพื้น navy */
+  --lavender-100: #e9e6ff;
+  --lavender-50: #f1efff;
+  --sky-soft: #dce6ff; /* sky-100 ในสเปก */
+  --surface: #f7f8fc;
+  --white: #ffffff;
+  --text: #33405f;
+  --text-muted: #5a6685;
+  --border: #dce3f7;
+  /* ขอบช่องกรอก: ค่านี้ไม่มีในสเปก คำนวณให้ ≥ 3:1 บนทั้งขาวและ surface (3.34 / 3.15) */
+  --border-strong: #7f8cb0;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* ── สีสถานะ (§1: ค่าตามสเปก) + พื้นอ่อนที่คำนวณให้ตัวอักษรผ่าน 4.5:1 ── */
+  --success: #0e7a4f;
+  --success-soft: #e6f5ee;
+  --warning: #b45309;
+  --warning-soft: #fef1e1;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+
+  --gradient-navy: linear-gradient(165deg, #0b1f4b 0%, #0b1f4b 55%, #1e46b8 100%);
+
+  /* ── map เข้าโทเคน shadcn ── */
+  --background: var(--surface);
+  --foreground: var(--text);
+  --card: var(--white);
+  --card-foreground: var(--text);
+  --popover: var(--white);
+  --popover-foreground: var(--text);
+  --primary: var(--blue);
+  --primary-foreground: var(--white);
+  --secondary: var(--lavender-100);
+  --secondary-foreground: var(--navy);
+  --muted: var(--lavender-50);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--lavender-100);
+  --accent-foreground: var(--navy);
+  --destructive: var(--danger);
+  --input: var(--border-strong);
+  --ring: var(--blue);
+  --chart-1: var(--blue);
+  --chart-2: var(--navy);
+  --chart-3: var(--lavender);
+  --chart-4: var(--blue-soft);
+  --chart-5: var(--blue-deep);
+  --radius: 1rem;
+  --sidebar: var(--navy);
+  --sidebar-foreground: var(--white);
+  --sidebar-primary: var(--blue);
+  --sidebar-primary-foreground: var(--white);
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: var(--white);
+  --sidebar-border: rgba(255, 255, 255, 0.14);
+  --sidebar-ring: var(--blue-soft);
 }
 
 @layer base {
@@ -128,8 +150,21 @@
   html {
     @apply font-sans;
   }
+  /* หัวข้อใช้ Prompt สี navy; ภาษาไทยห้าม letter-spacing ติดลบ (DESIGN.md §2) */
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    color: var(--navy);
+    letter-spacing: 0;
+    line-height: 1.3;
+  }
 }
-/* พิมพ์ใบเสร็จ: กระดาษความร้อน 80 มม. — ซ่อนทุกอย่างยกเว้นใบเสร็จ */
+
+/* พื้นเข้ม gradient (sidebar, หน้า login, การ์ดเน้น) */
+@utility bg-navy-gradient {
+  background-image: var(--gradient-navy);
+}
+
+/* พิมพ์ใบเสร็จ: กระดาษความร้อน 80 มม. — ซ่อนทุกอย่างยกเว้นใบเสร็จ (คงดำบนขาวเพราะเป็นงานพิมพ์) */
 @media print {
   @page { size: 80mm auto; margin: 0; }
   html, body { background: #fff !important; }
@@ -138,15 +173,13 @@
   .receipt { width: 80mm !important; margin: 0 !important; padding: 4mm !important; }
 }
 
-/* จอสัมผัส (มือถือ/iPad): ปุ่มและช่องกรอกสูงอย่างน้อย 44px ตามแนวทาง Apple HIG เพื่อกดง่ายและไม่พลาด */
-@media (pointer: coarse) {
-  [data-slot="button"],
-  [data-slot="input"] {
-    min-height: 2.75rem;
-  }
-  [data-slot="button"] {
-    min-width: 2.75rem;
-  }
+/* ปุ่ม/ช่องกรอก/พื้นที่แตะสูงอย่างน้อย 44px (DESIGN.md §5 — ใช้บนแท็บเล็ตหน้าร้าน) ทุกอุปกรณ์ */
+[data-slot="button"],
+[data-slot="input"] {
+  min-height: 2.75rem;
+}
+[data-slot="button"] {
+  min-width: 2.75rem;
 }
 
 /* วงแหวนโฟกัสคีย์บอร์ดที่เห็นชัดทั่วระบบ (ลิงก์/ปุ่มธรรมดาที่ไม่มีสไตล์โฟกัสของตัวเอง) */
@@ -154,7 +187,7 @@
   a:focus-visible,
   button:focus-visible,
   [role="tab"]:focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
 }

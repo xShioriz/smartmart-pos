@@ -15,7 +15,7 @@ export function StatCard({ title, value, hint, icon: Icon, tone = "default", cla
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm text-muted-foreground">{title}</p>
-          <p className={cn("mt-1 truncate text-2xl font-bold tabular-nums tracking-tight", valueTone[tone])}>{value}</p>
+          <p className={cn("mt-1 truncate text-2xl font-bold tabular-nums", valueTone[tone])}>{value}</p>
         </div>
         <span aria-hidden className={cn("flex size-9 shrink-0 items-center justify-center rounded-md", chip[tone])}><Icon className="size-5" /></span>
       </div>

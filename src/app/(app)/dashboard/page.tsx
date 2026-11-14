@@ -25,7 +25,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <div className="mb-5">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+        <h1 className="text-2xl font-bold sm:text-3xl">
           <span className="text-muted-foreground">สวัสดี,</span> {user.name}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">ภาพรวมวันที่ {d.today} (เวลาไทย)</p>
