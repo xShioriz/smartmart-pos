@@ -25,6 +25,8 @@ function barFill(i: number, n: number) {
 
 /** กราฟยอดขายสุทธิรายวัน (บาท); มีตารางข้อมูลสำรองในหน้ารายงาน */
 export function SalesChart({ data }: { data: ChartPoint[] }) {
+  // ไล่โทนเฉพาะวันที่มียอด: วันล่าสุดที่มียอดเข้มสุด (วันไม่มียอดไม่มีแท่งให้เห็นอยู่แล้ว)
+  const withSales = data.filter((p) => p.net > 0).map((p) => p.day);
   return (
     <div className="h-64 w-full" role="img" aria-label="กราฟยอดขายสุทธิรายวัน">
       <ResponsiveContainer width="100%" height="100%">
@@ -39,7 +41,7 @@ export function SalesChart({ data }: { data: ChartPoint[] }) {
             labelFormatter={(d) => `วันที่ ${shortDay(String(d))}`}
           />
           <Bar dataKey="net" name="net" radius={[6, 6, 0, 0]} maxBarSize={28}>
-            {data.map((p, i) => <Cell key={p.day} fill={barFill(i, data.length)} />)}
+            {data.map((p) => <Cell key={p.day} fill={barFill(Math.max(0, withSales.indexOf(p.day)), withSales.length)} />)}
           </Bar>
         </BarChart>
       </ResponsiveContainer>

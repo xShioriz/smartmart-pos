@@ -290,7 +290,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
       {/* ขวา: ตะกร้า */}
       <aside
         className={cn(
-          "flex-col border bg-card lg:sticky lg:top-[4.5rem] lg:flex lg:max-h-[calc(100vh-9rem)] lg:rounded-xl",
+          "flex-col border bg-card lg:sticky lg:top-[4.5rem] lg:flex lg:min-h-[32rem] lg:max-h-[calc(100dvh-17rem)] lg:rounded-xl",
           cartOpen ? "fixed inset-0 z-40 flex" : "hidden",
         )}
         aria-label="ตะกร้าสินค้า"
