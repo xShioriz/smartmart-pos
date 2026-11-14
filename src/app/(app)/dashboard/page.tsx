@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, Bell, CalendarClock, Package, Receipt, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BillsChart, SalesChart } from "@/components/charts/sales-chart";
 import { InsightList } from "@/components/shared/insight-card";
 import { StatCard } from "@/components/shared/stat-card";
@@ -24,19 +25,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <>
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold sm:text-3xl">
-          <span className="text-muted-foreground">สวัสดี,</span> {user.name}
+      <div className="mb-6">
+        <p className="mb-1 font-heading text-sm font-semibold uppercase tracking-[0.2em] text-blue">Dashboard</p>
+        <h1 className="font-heading text-page font-bold text-navy sm:text-display">
+          <span className="font-semibold text-muted-foreground">สวัสดี,</span> {user.name}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">ภาพรวมวันที่ {d.today} (เวลาไทย)</p>
+        <span aria-hidden className="mt-2 block h-1 w-11 rounded-full bg-blue" />
+        <p className="mt-3 text-sm text-muted-foreground">ภาพรวมวันที่ {d.today} (เวลาไทย)</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          title="ยอดขายสุทธิวันนี้" value={formatMoney(d.todayNet)} icon={Wallet}
+          featured title="ยอดขายสุทธิวันนี้" value={formatMoney(d.todayNet)} icon={Wallet}
           hint={cmp === null ? <>เมื่อวาน {formatMoney(d.yesterdayNet)}</> : (
-            <span className={cn("inline-flex items-center gap-1 font-medium", cmp >= 0 ? "text-emerald-700" : "text-red-600")}>
-              {cmp >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />} {cmp >= 0 ? "+" : ""}{cmp.toFixed(1)}% จากเมื่อวาน ({formatMoney(d.yesterdayNet)})
+            <span className="inline-flex items-center gap-1 font-semibold text-white">
+              {cmp >= 0 ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />} {cmp >= 0 ? "+" : ""}{cmp.toFixed(1)}% จากเมื่อวาน ({formatMoney(d.yesterdayNet)})
             </span>
           )}
         />
@@ -52,21 +55,21 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <section className={card}>
           <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h2 className="font-semibold">ยอดขายสุทธิรายวัน</h2>
-              <p className="text-xs text-muted-foreground">รวม {range} วัน {formatMoney(d.rangeTotals.net)} · เฉลี่ยต่อบิล {formatMoney(d.rangeTotals.avgBill)}</p>
+              <h2 className="font-heading text-lg font-semibold">ยอดขายสุทธิรายวัน</h2>
+              <p className="text-sm text-muted-foreground">รวม {range} วัน {formatMoney(d.rangeTotals.net)} · เฉลี่ยต่อบิล {formatMoney(d.rangeTotals.avgBill)}</p>
             </div>
-            <div className="flex gap-1 rounded-md bg-muted p-0.5 text-sm" role="tablist" aria-label="ช่วงเวลา">
+            <div className="flex gap-1 rounded-xl bg-lavender-100 p-1 text-sm" role="tablist" aria-label="ช่วงเวลา">
               {([7, 30] as const).map((n) => (
-                <Link key={n} href={`/dashboard?range=${n}`} role="tab" aria-selected={resolved.preset === n} className={cn("rounded-[4px] px-3 py-1 transition-colors", resolved.preset === n ? "bg-card font-medium text-primary shadow-sm" : "text-muted-foreground hover:text-foreground")}>{n} วัน</Link>
+                <Link key={n} href={`/dashboard?range=${n}`} role="tab" aria-selected={resolved.preset === n} className={cn("inline-flex min-h-11 items-center rounded-lg px-4 font-heading font-semibold transition-colors", resolved.preset === n ? "bg-blue text-white" : "text-navy hover:bg-lavender")}>{n} วัน</Link>
               ))}
             </div>
           </div>
           <form className="mb-3 flex flex-wrap items-center gap-2 text-sm" aria-label="เลือกช่วงวันที่เอง">
-            <input type="date" name="from" defaultValue={resolved.range.from} max={d.today} aria-label="ตั้งแต่วันที่" className="h-8 rounded-md border border-input bg-card px-2 text-sm" />
+            <input type="date" name="from" defaultValue={resolved.range.from} max={d.today} aria-label="ตั้งแต่วันที่" className="h-11 rounded-lg border border-input bg-card px-3 text-base" />
             <span className="text-muted-foreground">ถึง</span>
-            <input type="date" name="to" defaultValue={resolved.range.to} max={d.today} aria-label="ถึงวันที่" className="h-8 rounded-md border border-input bg-card px-2 text-sm" />
-            <button type="submit" className="h-8 rounded-md border bg-card px-3 font-medium hover:bg-muted">ดูช่วงนี้</button>
-            {resolved.invalid && <span className="text-xs text-red-600" role="alert">ช่วงวันที่ไม่ถูกต้อง (ต้องไม่เกินวันนี้ และไม่เกิน 366 วัน) — แสดง {range} วันล่าสุดแทน</span>}
+            <input type="date" name="to" defaultValue={resolved.range.to} max={d.today} aria-label="ถึงวันที่" className="h-11 rounded-lg border border-input bg-card px-3 text-base" />
+            <Button type="submit" variant="outline">ดูช่วงนี้</Button>
+            {resolved.invalid && <span className="text-sm font-medium text-danger" role="alert">ช่วงวันที่ไม่ถูกต้อง (ต้องไม่เกินวันนี้ และไม่เกิน 366 วัน) — แสดง {range} วันล่าสุดแทน</span>}
           </form>
           {noSales ? (
             <p className="flex h-64 items-center justify-center text-sm text-muted-foreground">ยังไม่มียอดขายในช่วงนี้</p>
@@ -75,8 +78,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
         <section className={card}>
           <div className="mb-3">
-            <h2 className="font-semibold">จำนวนบิลรายวัน</h2>
-            <p className="text-xs text-muted-foreground">รวม {range} วัน {d.rangeTotals.bills.toLocaleString("th-TH")} บิล</p>
+            <h2 className="font-heading text-lg font-semibold">จำนวนบิลรายวัน</h2>
+            <p className="text-sm text-muted-foreground">รวม {range} วัน {d.rangeTotals.bills.toLocaleString("th-TH")} บิล</p>
           </div>
           {noSales ? (
             <p className="flex h-64 items-center justify-center text-sm text-muted-foreground">ยังไม่มียอดขายในช่วงนี้</p>
@@ -86,29 +89,29 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <section className={card}>
-          <h2 className="mb-3 font-semibold">สินค้าขายดี 7 วัน</h2>
+          <h2 className="mb-3 font-heading text-lg font-semibold">สินค้าขายดี 7 วัน</h2>
           {d.top.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">ยังไม่มียอดขาย</p>
           ) : (
             <ol className="space-y-2.5">
               {d.top.map((p, i) => (
                 <li key={p.productId} className="flex items-center gap-3 text-sm">
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">{i + 1}</span>
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-lavender-100 font-heading text-sm font-semibold text-navy">{i + 1}</span>
                   <span className="min-w-0 flex-1 truncate">{p.name}</span>
                   <span className="shrink-0 tabular-nums text-muted-foreground">{p.units} ชิ้น</span>
                 </li>
               ))}
             </ol>
           )}
-          <Link href="/reports" className="mt-3 inline-block text-xs text-primary hover:underline">ดูรายงานทั้งหมด →</Link>
+          <Link href="/reports" className="mt-3 inline-block text-sm font-medium text-primary hover:underline">ดูรายงานทั้งหมด →</Link>
         </section>
 
         <section className={card}>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold">สต็อกที่ต้องดูแล</h2>
-            {d.unread > 0 && <Link href="/notifications" className="inline-flex items-center gap-1 text-xs text-primary hover:underline"><Bell className="size-3" /> แจ้งเตือนใหม่ {d.unread}</Link>}
+            <h2 className="font-heading text-lg font-semibold">สต็อกที่ต้องดูแล</h2>
+            {d.unread > 0 && <Link href="/notifications" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"><Bell className="size-4" /> แจ้งเตือนใหม่ {d.unread}</Link>}
           </div>
-          <div className="mb-3 flex flex-wrap gap-2 text-xs">
+          <div className="mb-3 flex flex-wrap gap-2 text-sm">
             <Badge variant="caution"><CalendarClock className="size-3" /> ใกล้หมดอายุ {d.nearExpiryProducts}</Badge>
             <Badge variant={d.expiredProducts > 0 ? "destructive" : "outline"}>มีล็อตหมดอายุ {d.expiredProducts}</Badge>
           </div>
@@ -119,18 +122,18 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
               {d.lowList.map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-2">
                   <Link href={`/inventory/${p.id}`} className="min-w-0 truncate hover:text-primary hover:underline">{p.name}</Link>
-                  <span className="shrink-0 tabular-nums text-amber-700">{p.stock}/{p.min} {p.unit}</span>
+                  <span className="shrink-0 tabular-nums font-medium text-warning">{p.stock}/{p.min} {p.unit}</span>
                 </li>
               ))}
             </ul>
           )}
-          <Link href="/inventory?filter=low" className="mt-3 inline-block text-xs text-primary hover:underline">ดูคลังสินค้า →</Link>
+          <Link href="/inventory?filter=low" className="mt-3 inline-block text-sm font-medium text-primary hover:underline">ดูคลังสินค้า →</Link>
         </section>
       </div>
 
       <div className="mt-4">
         <InsightList insights={d.insights} limit={3} title="Smart BI สรุป" />
-        <Link href="/reports" className="mt-2 inline-block text-xs text-primary hover:underline">ดูการวิเคราะห์ทั้งหมดที่หน้ารายงาน →</Link>
+        <Link href="/reports" className="mt-2 inline-block text-sm font-medium text-primary hover:underline">ดูการวิเคราะห์ทั้งหมดที่หน้ารายงาน →</Link>
       </div>
     </>
   );

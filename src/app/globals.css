@@ -75,7 +75,7 @@
   --radius-3xl: 28px;
   --radius-4xl: 999px;
 
-  --shadow-float: 0 14px 30px rgba(11, 31, 75, 0.14);
+  --shadow-float: var(--elevation-float);
 
   /* สเกลขนาด DESIGN.md §2: หัวข้อหน้า 28 (text-page), ตัวเลขเด่น/ฮีโร่ 44 (text-display) */
   --text-page: 1.75rem;
@@ -110,6 +110,7 @@
   --danger: #b42318;
   --danger-soft: #fdecea;
 
+  --elevation-float: 0 14px 30px rgba(11, 31, 75, 0.14); /* เงาการ์ดลอย (DESIGN.md §3) */
   --gradient-navy: linear-gradient(165deg, #0b1f4b 0%, #0b1f4b 55%, #1e46b8 100%);
 
   /* ── map เข้าโทเคน shadcn ── */
