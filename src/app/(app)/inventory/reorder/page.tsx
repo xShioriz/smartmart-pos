@@ -36,7 +36,7 @@ export default async function ReorderPage() {
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_tr>:nth-child(8)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <TableHead>SKU</TableHead><TableHead>ชื่อสินค้า</TableHead><TableHead>หมวดหมู่</TableHead>
                 <TableHead className="text-right">คงเหลือ</TableHead><TableHead className="text-right">ขั้นต่ำ</TableHead>
                 <TableHead className="text-right">พอขายอีก</TableHead><TableHead className="text-right">ควรสั่ง</TableHead><TableHead className="text-right">ประมาณการ</TableHead>

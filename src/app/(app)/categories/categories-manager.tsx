@@ -48,7 +48,7 @@ export function CategoriesManager({ categories, searching, sortLinks }: { catego
         <div className="overflow-hidden rounded-xl border bg-card">
           <Table className="max-sm:[&_tr>:nth-child(2)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <SortHead label="ชื่อหมวดหมู่" {...sortLinks.name} />
                 <SortHead label="คำอธิบาย" {...sortLinks.description} />
                 <SortHead label="จำนวนสินค้า" right {...sortLinks.count} />

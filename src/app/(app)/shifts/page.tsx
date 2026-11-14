@@ -66,7 +66,7 @@ export default async function ShiftsPage({ searchParams }: { searchParams: Promi
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50">
+                <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                   <SortHead label="กะ" {...links.no} /><SortHead label="เปิด" {...links.opened} /><SortHead label="ปิด" {...links.closed} />
                   <SortHead label="ตั้งต้น" right {...links.opening} /><SortHead label="ควรมี" right {...links.expected} /><SortHead label="นับได้" right {...links.counted} />
                   <SortHead label="ผลต่าง" right {...links.diff} /><TableHead>หมายเหตุ</TableHead>

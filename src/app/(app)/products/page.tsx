@@ -10,7 +10,7 @@ import { parseSort, sortLinks, type SortState } from "@/lib/sort";
 import { PRODUCT_SORT_KEYS, listProducts, type ProductSortKey } from "@/server/services/products";
 import { ProductsManager } from "./products-manager";
 
-const selectClass = "h-8 rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const selectClass = "h-11 rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 type SP = { q?: string; category?: string; status?: string; page?: string; sort?: string; dir?: string };
 

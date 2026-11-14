@@ -48,7 +48,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
         <input type="hidden" name="dir" value={sort.dir} />
         <Input name="q" defaultValue={q ?? ""} placeholder="ค้นหาเลขที่ใบเสร็จ" aria-label="ค้นหาเลขที่ใบเสร็จ" className="w-60" />
         <Input name="date" type="date" defaultValue={date ?? ""} aria-label="วันที่" className="w-44" />
-        <select name="view" defaultValue={view} aria-label="สถานะบิล" className="h-8 rounded-lg border border-input bg-card px-2.5 text-sm">
+        <select name="view" defaultValue={view} aria-label="สถานะบิล" className="h-11 rounded-lg border border-input bg-card px-3 text-base">
           <option value="done">บิลที่เสร็จแล้ว</option>
           <option value="review">จ่ายแล้ว — ต้องตรวจสอบ</option>
           {user.role === "ADMIN" && <option value="unfinished">รอชำระ/ยกเลิก (QR)</option>}
@@ -63,7 +63,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(4)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_tr>:nth-child(8)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <SortHead label="เลขที่ใบเสร็จ" {...links.receipt} /><SortHead label="วันเวลา" {...links.time} /><SortHead label="พนักงาน" {...links.cashier} />
                 <SortHead label="รายการ" right {...links.items} /><SortHead label="ยอดสุทธิ" right {...links.total} /><SortHead label="ชำระโดย" {...links.method} /><SortHead label="สถานะ" {...links.status} /><TableHead className="text-right">รายละเอียด</TableHead>
               </TableRow>

@@ -47,7 +47,7 @@ export default async function ProductStockPage({ params }: { params: Promise<{ i
             <div className="overflow-x-auto rounded-xl border bg-card">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
+                  <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                     <TableHead>เวลา</TableHead><TableHead>ล็อต</TableHead><TableHead>ประเภท</TableHead>
                     <TableHead className="text-right">เปลี่ยนแปลง</TableHead><TableHead className="text-right">คงเหลือหลังรายการ</TableHead><TableHead>หมายเหตุ</TableHead><TableHead>โดย</TableHead>
                   </TableRow>

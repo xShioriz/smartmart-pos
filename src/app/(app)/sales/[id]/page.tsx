@@ -48,7 +48,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
         <section className="overflow-x-auto rounded-xl border bg-card lg:col-span-2">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50"><TableHead>สินค้า</TableHead><TableHead className="text-right">จำนวน</TableHead><TableHead className="text-right">คืนแล้ว</TableHead><TableHead className="text-right">ราคา/หน่วย</TableHead><TableHead className="text-right">ส่วนลด</TableHead><TableHead className="text-right">สุทธิ</TableHead></TableRow>
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50"><TableHead>สินค้า</TableHead><TableHead className="text-right">จำนวน</TableHead><TableHead className="text-right">คืนแล้ว</TableHead><TableHead className="text-right">ราคา/หน่วย</TableHead><TableHead className="text-right">ส่วนลด</TableHead><TableHead className="text-right">สุทธิ</TableHead></TableRow>
             </TableHeader>
             <TableBody>
               {sale.items.map((i) => (

@@ -32,7 +32,7 @@ const STATUS: Record<Item["status"], { label: string; cls: string }> = {
   EXPIRED: { label: "หมดอายุ", cls: "bg-slate-200 text-slate-700" },
   DISABLED: { label: "ปิดใช้งาน", cls: "bg-slate-200 text-slate-700" },
 };
-const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const selectClass = "h-11 w-full rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const discountLabel = (p: Item) => (p.discountType === "PERCENT" ? `${Number(p.value)}%` : p.scope === "BILL" ? formatMoney(p.value) : `${formatMoney(p.value)}/หน่วย`);
 const fmtLocal = (iso: string) => formatDateTime(new Date(iso));
@@ -65,7 +65,7 @@ export function PromotionsManager({ items, products, categories, sortLinks }: { 
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table className="max-sm:[&_tr>:nth-child(2)]:hidden max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <SortHead label="ชื่อโปรโมชั่น" {...sortLinks.name} /><SortHead label="ประเภท" {...sortLinks.scope} /><SortHead label="เป้าหมาย" {...sortLinks.target} /><SortHead label="ส่วนลด" right {...sortLinks.discount} />
                 <SortHead label="ขั้นต่ำ" right {...sortLinks.min} /><SortHead label="ช่วงเวลา" {...sortLinks.period} /><SortHead label="สถานะ" {...sortLinks.status} /><TableHead className="text-right">จัดการ</TableHead>
               </TableRow>

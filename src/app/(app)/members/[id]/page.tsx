@@ -41,7 +41,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
       ) : (
         <div className="mb-6 overflow-x-auto rounded-xl border bg-card">
           <Table>
-            <TableHeader><TableRow className="bg-muted/50"><TableHead>เวลา</TableHead><TableHead>รายการ</TableHead><TableHead>ใบเสร็จ</TableHead><TableHead className="text-right">แต้ม</TableHead><TableHead className="text-right">คงเหลือ</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow className="bg-lavender-50 hover:bg-lavender-50"><TableHead>เวลา</TableHead><TableHead>รายการ</TableHead><TableHead>ใบเสร็จ</TableHead><TableHead className="text-right">แต้ม</TableHead><TableHead className="text-right">คงเหลือ</TableHead></TableRow></TableHeader>
             <TableBody>
               {ledger.map((l) => (
                 <TableRow key={l.id}>
@@ -63,7 +63,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
-            <TableHeader><TableRow className="bg-muted/50"><TableHead>ใบเสร็จ</TableHead><TableHead>เวลา</TableHead><TableHead className="text-right">ยอดสุทธิ</TableHead><TableHead className="text-right">แต้มที่ได้</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow className="bg-lavender-50 hover:bg-lavender-50"><TableHead>ใบเสร็จ</TableHead><TableHead>เวลา</TableHead><TableHead className="text-right">ยอดสุทธิ</TableHead><TableHead className="text-right">แต้มที่ได้</TableHead></TableRow></TableHeader>
             <TableBody>
               {sales.map((s) => (
                 <TableRow key={s.id}>

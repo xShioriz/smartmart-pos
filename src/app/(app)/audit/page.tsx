@@ -12,7 +12,7 @@ import { formatDateTime } from "@/lib/date";
 import { requirePage } from "@/server/auth/guard";
 import { listAuditLogs } from "@/server/services/audit-log";
 
-const selectClass = "h-8 rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const selectClass = "h-11 rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 type SP = { action?: string; user?: string; from?: string; to?: string; page?: string };
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<SP> }) {
@@ -61,7 +61,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       ) : (
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
-            <TableHeader><TableRow className="bg-muted/50"><TableHead>เวลา</TableHead><TableHead>ผู้ทำรายการ</TableHead><TableHead>เหตุการณ์</TableHead><TableHead>ข้อมูลที่เกี่ยวข้อง</TableHead><TableHead>รายละเอียด</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow className="bg-lavender-50 hover:bg-lavender-50"><TableHead>เวลา</TableHead><TableHead>ผู้ทำรายการ</TableHead><TableHead>เหตุการณ์</TableHead><TableHead>ข้อมูลที่เกี่ยวข้อง</TableHead><TableHead>รายละเอียด</TableHead></TableRow></TableHeader>
             <TableBody>
               {data.rows.map((r) => (
                 <TableRow key={r.id} className="align-top">

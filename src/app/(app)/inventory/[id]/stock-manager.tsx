@@ -17,7 +17,7 @@ import { adjustStockAction, receiveStockAction } from "../actions";
 type Batch = { id: string; batchNo: string; expiryDate: string | null; receivedAt: string; costPrice: string | null; initialQty: number; remainingQty: number; state: "OK" | "NEAR_EXPIRY" | "EXPIRED" };
 type Dlg = { kind: "receive" } | { kind: "adjust"; batch: Batch } | null;
 
-const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const selectClass = "h-11 w-full rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function StockManager({ isAdmin, productId, unit, defaultCost, batches }: { isAdmin: boolean; productId: string; unit: string; defaultCost: string | null; batches: Batch[] }) {
   const [dlg, setDlg] = useState<Dlg>(null);
@@ -45,7 +45,7 @@ export function StockManager({ isAdmin, productId, unit, defaultCost, batches }:
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <TableHead>เลขล็อต</TableHead><TableHead>หมดอายุ</TableHead><TableHead>รับเข้า</TableHead>
                 {isAdmin && <TableHead className="text-right">ทุน/หน่วย</TableHead>}
                 <TableHead className="text-right">รับเข้า (จำนวน)</TableHead><TableHead className="text-right">คงเหลือ</TableHead><TableHead>สถานะ</TableHead>

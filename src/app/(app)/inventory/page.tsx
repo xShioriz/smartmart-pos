@@ -16,7 +16,7 @@ import { nextSort, parseSort, type SortDir, type SortState } from "@/lib/sort";
 import { INVENTORY_SORT_KEYS, MOVEMENT_SORT_KEYS, listInventory, listMovements, sortInventory, type InventoryFilter, type InventorySortKey, type MovementSortKey } from "@/server/services/inventory";
 import { syncNotifications } from "@/server/services/notifications";
 
-const selectClass = "h-8 rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const selectClass = "h-11 rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 const MOVEMENT_LABEL: Record<string, string> = { INITIAL: "ยอดยกมา", RESTOCK: "รับเข้า", SALE: "ขาย", ADJUSTMENT: "ปรับยอด", RETURN: "คืนสินค้า" };
 const FILTER_LABEL: Record<InventoryFilter, string> = { all: "ทั้งหมด", low: "ใกล้หมด", out: "หมด", near_expiry: "ใกล้หมดอายุ", expired: "มีล็อตหมดอายุ" };
 
@@ -92,7 +92,7 @@ async function StockTab({ q, filter, isAdmin, sort }: { q?: string; filter: Inve
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 {head("sku", "SKU")}{head("name", "ชื่อสินค้า")}{head("category", "หมวดหมู่")}
                 {head("stock", "คงเหลือ", true, "desc")}{head("sellable", "ขายได้", true, "desc")}
                 {head("min", "ขั้นต่ำ", true, "desc")}{head("expiry", "หมดอายุถัดไป")}{head("status", "สถานะ")}
@@ -151,7 +151,7 @@ async function MovementsTab({ type, page, sort }: { type?: string; page: number;
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 {head("time", "เวลา", false, "desc")}{head("product", "สินค้า")}<TableHead>ล็อต</TableHead>{head("type", "ประเภท")}
                 {head("change", "เปลี่ยนแปลง", true, "desc")}{head("balance", "คงเหลือหลังรายการ", true, "desc")}<TableHead>หมายเหตุ</TableHead><TableHead>โดย</TableHead>
               </TableRow>

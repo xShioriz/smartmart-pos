@@ -77,7 +77,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               <h2 className="p-4 pb-2 font-semibold">สรุปรายวัน</h2>
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
+                  <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                     <TableHead>วันที่</TableHead><TableHead className="text-right">บิล</TableHead><TableHead className="text-right">ยอดขาย</TableHead>
                     <TableHead className="text-right">เงินคืน</TableHead><TableHead className="text-right">สุทธิ</TableHead><TableHead className="text-right">กำไร</TableHead>
                   </TableRow>
@@ -113,7 +113,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                 <p className="p-6 text-center text-sm text-muted-foreground">ไม่มีข้อมูล</p>
               ) : (
                 <Table>
-                  <TableHeader><TableRow className="bg-muted/50"><TableHead>#</TableHead><TableHead>สินค้า</TableHead><TableHead className="text-right">ชิ้น</TableHead><TableHead className="text-right">รายได้</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow className="bg-lavender-50 hover:bg-lavender-50"><TableHead>#</TableHead><TableHead>สินค้า</TableHead><TableHead className="text-right">ชิ้น</TableHead><TableHead className="text-right">รายได้</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {top.map((p, i) => (
                       <TableRow key={p.productId}>

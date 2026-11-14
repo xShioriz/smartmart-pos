@@ -21,7 +21,7 @@ type UserRow = { id: string; email: string; name: string; role: Role; isActive: 
 
 const ROLE_LABEL: Record<Role, string> = { ADMIN: "ผู้ดูแลระบบ", CASHIER: "แคชเชียร์" };
 const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+  "h-11 w-full rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 type Dlg = { kind: "create" } | { kind: "edit"; user: UserRow } | { kind: "password"; user: UserRow } | { kind: "toggle"; user: UserRow } | null;
 
@@ -51,7 +51,7 @@ export function UsersManager({ users, meId, sortLinks }: { users: UserRow[]; meI
         <div className="overflow-hidden rounded-xl border bg-card">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <SortHead label="ชื่อ" {...sortLinks.name} />
                 <SortHead label="อีเมล" {...sortLinks.email} />
                 <SortHead label="สิทธิ์" {...sortLinks.role} />

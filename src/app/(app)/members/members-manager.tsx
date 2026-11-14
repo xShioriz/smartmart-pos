@@ -44,7 +44,7 @@ export function MembersManager({ items, filtered, sortLinks }: { items: Item[]; 
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(5)]:hidden max-sm:[&_tr>:nth-child(6)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <SortHead label="รหัส" {...sortLinks.code} /><SortHead label="ชื่อ" {...sortLinks.name} /><SortHead label="เบอร์โทร" {...sortLinks.phone} />
                 <SortHead label="แต้มคงเหลือ" right {...sortLinks.points} /><SortHead label="ยอดซื้อสะสม" right {...sortLinks.spent} /><SortHead label="สถานะ" {...sortLinks.status} /><TableHead className="text-right">จัดการ</TableHead>
               </TableRow>

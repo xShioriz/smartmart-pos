@@ -23,7 +23,7 @@ type Row = {
 };
 type Dlg = { kind: "form"; row: Row | null } | { kind: "toggle"; row: Row } | null;
 
-const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+const selectClass = "h-11 w-full rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 function StockBadge({ qty, min }: { qty: number; min: number }) {
   if (qty <= 0) return <Badge variant="destructive">หมด</Badge>;
@@ -62,7 +62,7 @@ export function ProductsManager({ items, categories, filtered, noCategories, sor
         <div className="overflow-x-auto rounded-xl border bg-card">
           <Table className="max-sm:[&_tr>:nth-child(3)]:hidden max-sm:[&_tr>:nth-child(4)]:hidden max-sm:[&_tr>:nth-child(7)]:hidden max-sm:[&_tr>:nth-child(1)]:hidden max-sm:[&_:is(th,td)]:px-1.5 max-sm:[&_td]:whitespace-normal">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-lavender-50 hover:bg-lavender-50">
                 <SortHead label="SKU" {...sortLinks.sku} />
                 <SortHead label="ชื่อสินค้า" {...sortLinks.name} />
                 <SortHead label="หมวดหมู่" {...sortLinks.category} />
