@@ -31,7 +31,7 @@ export default async function ShiftsPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <PageHeader title="ปิดกะ / นับเงินสด" description="เปิดกะด้วยเงินทอนตั้งต้น แล้วปิดกะด้วยเงินที่นับได้จริง ระบบเทียบกับยอดเงินสดที่ควรมีในลิ้นชักให้" />
+      <PageHeader eyebrow="Shifts" title="ปิดกะ / นับเงินสด" description="เปิดกะด้วยเงินทอนตั้งต้น แล้วปิดกะด้วยเงินที่นับได้จริง ระบบเทียบกับยอดเงินสดที่ควรมีในลิ้นชักให้" />
 
       {!open || !fig ? (
         <section className="rounded-xl border bg-card p-5">
@@ -49,7 +49,7 @@ export default async function ShiftsPage({ searchParams }: { searchParams: Promi
             <StatCard title="เงินคืนบิลเงินสด" value={formatMoney(fig.cashRefunds)} icon={Undo2} tone={Number(fig.cashRefunds) > 0 ? "warn" : "default"} />
             <StatCard title="เงินสดที่ควรมีในลิ้นชัก" value={formatMoney(fig.expected)} icon={Calculator} hint="ตั้งต้น + ขายเงินสด − เงินคืน" />
           </div>
-          <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><QrCode className="size-4" /> ยอด PromptPay QR ในกะนี้ {formatMoney(fig.qrSales)} — ไม่เข้าลิ้นชัก จึงไม่นับในยอดที่ควรมี</p>
+          <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><QrCode className="size-4" /> ยอด PromptPay QR ในกะนี้ {formatMoney(fig.qrSales)} — ไม่เข้าลิ้นชัก จึงไม่นับในยอดที่ควรมี</p>
 
           <section className="mt-4 rounded-xl border bg-card p-5">
             <h2 className="mb-3 font-semibold">ปิดกะ</h2>
@@ -78,12 +78,12 @@ export default async function ShiftsPage({ searchParams }: { searchParams: Promi
                   return (
                     <TableRow key={s.id}>
                       <TableCell className="font-medium">#{s.shiftNo}</TableCell>
-                      <TableCell className="text-sm">{formatDateTime(s.openedAt)}<div className="text-xs text-muted-foreground">{s.openedBy.name}</div></TableCell>
-                      <TableCell className="text-sm">{s.closedAt ? <>{formatDateTime(s.closedAt)}<div className="text-xs text-muted-foreground">{s.closedBy?.name}</div></> : <Badge variant="secondary">เปิดอยู่</Badge>}</TableCell>
+                      <TableCell className="text-sm">{formatDateTime(s.openedAt)}<div className="text-sm text-muted-foreground">{s.openedBy.name}</div></TableCell>
+                      <TableCell className="text-sm">{s.closedAt ? <>{formatDateTime(s.closedAt)}<div className="text-sm text-muted-foreground">{s.closedBy?.name}</div></> : <Badge variant="secondary">เปิดอยู่</Badge>}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(s.openingCash)}</TableCell>
                       <TableCell className="text-right tabular-nums">{s.expectedCash ? formatMoney(s.expectedCash) : "-"}</TableCell>
                       <TableCell className="text-right tabular-nums">{s.countedCash ? formatMoney(s.countedCash) : "-"}</TableCell>
-                      <TableCell className={`text-right font-medium tabular-nums ${d < 0 ? "text-red-600" : d > 0 ? "text-amber-600" : ""}`}>
+                      <TableCell className={`text-right font-medium tabular-nums ${d < 0 ? "text-danger" : d > 0 ? "text-warning" : ""}`}>
                         {s.difference === null ? "-" : d === 0 ? "ตรง" : `${d < 0 ? "ขาด" : "เกิน"} ${formatMoney(Math.abs(d))}`}
                       </TableCell>
                       <TableCell className="max-w-48 truncate text-sm text-muted-foreground" title={s.note ?? ""}>{s.note ?? ""}</TableCell>

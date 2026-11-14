@@ -12,11 +12,11 @@ import { markAllNotificationsReadAction, markNotificationReadAction } from "./ac
 type Item = { id: string; type: string; title: string; message: string; href: string | null; isRead: boolean; createdAt: string };
 
 const TYPE_STYLE: Record<string, string> = {
-  OUT_OF_STOCK: "bg-red-100 text-red-800",
-  EXPIRED: "bg-red-100 text-red-800",
-  LOW_STOCK: "bg-amber-100 text-amber-800",
-  NEAR_EXPIRY: "bg-orange-100 text-orange-800",
-  PAYMENT_REVIEW: "bg-red-100 text-red-800",
+  OUT_OF_STOCK: "bg-danger-soft text-danger",
+  EXPIRED: "bg-danger-soft text-danger",
+  LOW_STOCK: "bg-warning-soft text-warning",
+  NEAR_EXPIRY: "bg-warning-soft text-warning",
+  PAYMENT_REVIEW: "bg-danger-soft text-danger",
 };
 
 
@@ -42,7 +42,7 @@ export function NotificationList({ items }: { items: Item[] }) {
             <Badge className={TYPE_STYLE[n.type]}>{n.title}</Badge>
             <div className="min-w-0 flex-1 text-sm">
               <p>{n.message}</p>
-              {n.href && <Link href={n.href} className="text-xs text-primary hover:underline">{n.type === "PAYMENT_REVIEW" ? "ไปจัดการบิล" : "ดูรายละเอียดสินค้า"}</Link>}
+              {n.href && <Link href={n.href} className="text-sm text-primary hover:underline">{n.type === "PAYMENT_REVIEW" ? "ไปจัดการบิล" : "ดูรายละเอียดสินค้า"}</Link>}
             </div>
             {!n.isRead && (
               <Button variant="ghost" size="sm" disabled={pending} onClick={() => start(async () => { await markNotificationReadAction({ id: n.id }); })}>

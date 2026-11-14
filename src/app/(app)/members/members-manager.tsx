@@ -52,7 +52,7 @@ export function MembersManager({ items, filtered, sortLinks }: { items: Item[]; 
             <TableBody>
               {items.map((m) => (
                 <TableRow key={m.id} className={m.isActive ? "" : "opacity-60"}>
-                  <TableCell className="font-mono text-xs">{m.code}</TableCell>
+                  <TableCell className="font-mono text-sm">{m.code}</TableCell>
                   <TableCell><Link href={`/members/${m.id}`} className="font-medium hover:text-primary hover:underline">{m.name}</Link></TableCell>
                   <TableCell className="tabular-nums">{m.phone}</TableCell>
                   <TableCell className="text-right tabular-nums">{m.points.toLocaleString("th-TH")}</TableCell>

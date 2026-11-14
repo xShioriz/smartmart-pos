@@ -30,12 +30,12 @@ export function MemberPicker({ value, onChange, disabled }: { value: PickedMembe
 
   if (value) {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-sm">
+      <div className="flex items-center justify-between gap-2 rounded-xl bg-lavender-100 px-3 py-2 text-sm">
         <div className="min-w-0">
-          <p className="flex items-center gap-1 truncate font-medium text-green-900"><UserRound className="size-4 shrink-0" /> {value.name} <span className="font-mono text-xs text-green-800">({value.code})</span></p>
-          <p className="flex items-center gap-1 text-xs text-green-800"><Star className="size-3" /> แต้มสะสม {value.points.toLocaleString("th-TH")}</p>
+          <p className="flex items-center gap-1 truncate font-semibold text-navy"><UserRound className="size-4 shrink-0 text-blue" /> {value.name} <span className="font-mono text-sm font-normal text-muted-foreground">({value.code})</span></p>
+          <p className="flex items-center gap-1 text-sm text-navy"><Star className="size-4 text-blue" /> แต้มสะสม {value.points.toLocaleString("th-TH")}</p>
         </div>
-        <button type="button" disabled={disabled} onClick={() => onChange(null)} className="rounded p-1 text-green-900 hover:bg-green-100 disabled:opacity-50" aria-label="เอาสมาชิกออก"><X className="size-4" /></button>
+        <button type="button" disabled={disabled} onClick={() => onChange(null)} className="flex size-11 shrink-0 items-center justify-center rounded-lg text-navy hover:bg-lavender disabled:opacity-50" aria-label="เอาสมาชิกออก"><X className="size-5" /></button>
       </div>
     );
   }
@@ -50,19 +50,18 @@ export function MemberPicker({ value, onChange, disabled }: { value: PickedMembe
         aria-label="ค้นหาสมาชิก"
         autoComplete="off"
         disabled={disabled}
-        className="h-9"
       />
       {showList && (
-        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border bg-card shadow-md" role="listbox">
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border bg-card shadow-float" role="listbox">
           {hits.length === 0 ? (
             <li className="px-3 py-2 text-sm text-muted-foreground">ไม่พบสมาชิก</li>
           ) : (
             hits.map((h) => (
               <li key={h.id}>
-                <button type="button" role="option" aria-selected={false} className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                <button type="button" role="option" aria-selected={false} className="flex min-h-11 w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-lavender-50"
                   onClick={() => { onChange({ id: h.id, code: h.code, name: h.name, points: h.points }); setQ(""); setHits([]); setSearched(false); }}>
-                  <span className="min-w-0 truncate">{h.name} <span className="font-mono text-xs text-muted-foreground">{h.code} · …{h.phoneTail}</span></span>
-                  <span className="shrink-0 text-xs text-muted-foreground">{h.points} แต้ม</span>
+                  <span className="min-w-0 truncate">{h.name} <span className="font-mono text-sm text-muted-foreground">{h.code} · …{h.phoneTail}</span></span>
+                  <span className="shrink-0 text-sm text-muted-foreground">{h.points} แต้ม</span>
                 </button>
               </li>
             ))

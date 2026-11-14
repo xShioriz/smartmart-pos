@@ -22,9 +22,9 @@ export function ResolveReview({ saleId }: { saleId: string }) {
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-red-300 bg-red-50 p-4">
-      <p className="font-semibold text-red-900">ลูกค้าจ่ายเงินแล้ว แต่ระบบตัดสต็อกไม่ได้ (สต็อกไม่พอ) — ต้องดำเนินการ</p>
-      <p className="text-sm text-red-900">เลือกทำรายการต่อ (หลังเติมสต็อกแล้ว) หรือคืนเงินลูกค้าด้วยการโอนคืนนอกระบบ (Provider ไม่รองรับการคืนเงิน PromptPay) แล้วบันทึกที่นี่</p>
+    <div className="space-y-3 rounded-xl border border-danger/30 bg-danger-soft p-4">
+      <p className="font-semibold text-danger">ลูกค้าจ่ายเงินแล้ว แต่ระบบตัดสต็อกไม่ได้ (สต็อกไม่พอ) — ต้องดำเนินการ</p>
+      <p className="text-sm text-danger">เลือกทำรายการต่อ (หลังเติมสต็อกแล้ว) หรือคืนเงินลูกค้าด้วยการโอนคืนนอกระบบ (Provider ไม่รองรับการคืนเงิน PromptPay) แล้วบันทึกที่นี่</p>
       <div className="space-y-2">
         <Label htmlFor="note">หมายเหตุ (บังคับ)</Label>
         <Input id="note" value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} placeholder="เช่น โอนคืนลูกค้าแล้วเมื่อ 14:30" />

@@ -29,7 +29,7 @@ export function OpenShiftForm() {
       <div className="space-y-2">
         <Label htmlFor="openingCash">เงินทอนตั้งต้นในลิ้นชัก (บาท)</Label>
         <Input id="openingCash" name="openingCash" inputMode="decimal" required placeholder="เช่น 1000" autoComplete="off" />
-        <p className="text-xs text-muted-foreground">นับเงินในลิ้นชักก่อนเริ่มขาย แล้วกรอกจำนวนที่นับได้</p>
+        <p className="text-sm text-muted-foreground">นับเงินในลิ้นชักก่อนเริ่มขาย แล้วกรอกจำนวนที่นับได้</p>
       </div>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <Button type="submit" disabled={pending}>{pending ? <Loader2 className="animate-spin" /> : <Unlock />} เปิดกะ</Button>
@@ -66,7 +66,7 @@ export function CloseShiftForm({ shiftId, expected }: { shiftId: string; expecte
         <Label htmlFor="countedCash">เงินสดที่นับได้จริง (บาท)</Label>
         <Input id="countedCash" name="countedCash" inputMode="decimal" required value={counted} onChange={(e) => setCounted(e.target.value)} autoComplete="off" />
         {diff !== null && (
-          <p className={`text-sm ${Math.abs(diff) < 0.005 ? "text-green-700" : "text-amber-700"}`} aria-live="polite">
+          <p className={`text-sm ${Math.abs(diff) < 0.005 ? "text-success" : "text-warning"}`} aria-live="polite">
             {Math.abs(diff) < 0.005 ? "ตรงกับยอดที่ควรมี" : `${diff < 0 ? "ขาด" : "เกิน"} ${formatMoney(Math.abs(diff))} (เทียบกับยอดที่แสดงตอนนี้ — ระบบคำนวณใหม่ตอนปิดกะ)`}
           </p>
         )}

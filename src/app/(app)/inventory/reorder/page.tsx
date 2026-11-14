@@ -17,6 +17,7 @@ export default async function ReorderPage() {
     <>
       <Link href="/inventory" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> คลังสินค้า</Link>
       <PageHeader
+        eyebrow="Reorder"
         title="รายการที่ควรสั่งซื้อ"
         description={`สินค้าที่ใกล้หมดหรือหมดแล้ว ${list.length.toLocaleString("th-TH")} รายการ · ประมาณการมูลค่า ${formatMoney(total)}`}
         action={
@@ -25,7 +26,7 @@ export default async function ReorderPage() {
           </a>
         }
       />
-      <p className="mb-4 rounded-xl border bg-card p-3 text-xs text-muted-foreground">
+      <p className="mb-4 rounded-xl border bg-card p-3 text-sm text-muted-foreground">
         วิธีคำนวณ: เตือนเมื่อ สต็อก ≤ ขั้นต่ำ หรือสต็อกพอขายน้อยกว่า 7 วัน (สต็อก ÷ ยอดขายเฉลี่ยต่อวันใน 14 วัน) · จำนวนที่ควรสั่ง = ยอดขายเฉลี่ย/วัน × 14 − สต็อก ·
         ถ้าต่ำกว่าขั้นต่ำแต่ไม่มียอดขายใน 14 วัน แนะนำเติมให้ถึง 2 × ขั้นต่ำ · เป็นคำแนะนำจากสถิติ ควรตรวจกับหน้าร้านก่อนสั่งจริง
       </p>
@@ -45,15 +46,15 @@ export default async function ReorderPage() {
             <TableBody>
               {list.map((r) => (
                 <TableRow key={r.sku}>
-                  <TableCell className="font-mono text-xs">{r.sku}</TableCell>
+                  <TableCell className="font-mono text-sm">{r.sku}</TableCell>
                   <TableCell className="font-medium">{r.name}</TableCell>
                   <TableCell>{r.category}</TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {r.stock <= 0 ? <Badge variant="destructive">หมด</Badge> : <>{r.stock.toLocaleString("th-TH")} <span className="text-xs text-muted-foreground">{r.unit}</span></>}
+                    {r.stock <= 0 ? <Badge variant="destructive">หมด</Badge> : <>{r.stock.toLocaleString("th-TH")} <span className="text-sm text-muted-foreground">{r.unit}</span></>}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{r.minStock}</TableCell>
                   <TableCell className="text-right tabular-nums">{r.cover === null ? <span className="text-muted-foreground">ไม่มียอดขาย</span> : `${r.cover.toFixed(1)} วัน`}</TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">{r.suggest.toLocaleString("th-TH")} <span className="text-xs font-normal text-muted-foreground">{r.unit}</span></TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">{r.suggest.toLocaleString("th-TH")} <span className="text-sm font-normal text-muted-foreground">{r.unit}</span></TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(r.estCost)}</TableCell>
                 </TableRow>
               ))}

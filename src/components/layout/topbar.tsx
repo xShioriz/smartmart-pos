@@ -15,7 +15,7 @@ export function Topbar({ name, role, unread }: { name: string; role: Role; unrea
           <Link href="/notifications" className="relative flex size-11 items-center justify-center rounded-lg outline-none hover:bg-white/10 focus-visible:ring-3 focus-visible:ring-blue-soft" title="การแจ้งเตือน" aria-label={`การแจ้งเตือน ยังไม่อ่าน ${unread} รายการ`}>
             <Bell className="size-6" strokeWidth={1.8} />
             {unread > 0 && (
-              <span className="absolute right-0.5 top-0.5 flex min-w-5 items-center justify-center rounded-full bg-danger px-1 text-xs font-semibold leading-5 text-white">{unread > 99 ? "99+" : unread}</span>
+              <span className="absolute right-0.5 top-0.5 flex min-w-5 items-center justify-center rounded-full bg-danger px-1 text-sm font-semibold leading-5 text-white">{unread > 99 ? "99+" : unread}</span>
             )}
           </Link>
         )}

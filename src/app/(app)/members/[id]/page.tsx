@@ -25,6 +25,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
     <>
       <Link href="/members" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> สมาชิก</Link>
       <PageHeader
+        eyebrow="Member"
         title={m.name}
         description={`${m.code} · ${m.phone}${m.email ? ` · ${m.email}` : ""}`}
         action={<Badge variant={m.isActive ? "outline" : "secondary"}>{m.isActive ? "ใช้งาน" : "ปิดใช้งาน"}</Badge>}
@@ -45,10 +46,10 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
             <TableBody>
               {ledger.map((l) => (
                 <TableRow key={l.id}>
-                  <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(l.createdAt))}</TableCell>
-                  <TableCell>{TYPE[l.type] ?? l.type}<span className="ml-2 text-xs text-muted-foreground">{l.note}</span></TableCell>
-                  <TableCell>{l.saleId && l.receiptNo ? <Link href={`/sales/${l.saleId}`} className="font-mono text-xs text-primary hover:underline">{l.receiptNo}</Link> : "-"}</TableCell>
-                  <TableCell className={cn("text-right font-medium tabular-nums", l.points < 0 ? "text-red-600" : "text-green-700")}>{l.points > 0 ? "+" : ""}{l.points}</TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">{formatDateTime(new Date(l.createdAt))}</TableCell>
+                  <TableCell>{TYPE[l.type] ?? l.type}<span className="ml-2 text-sm text-muted-foreground">{l.note}</span></TableCell>
+                  <TableCell>{l.saleId && l.receiptNo ? <Link href={`/sales/${l.saleId}`} className="font-mono text-sm text-primary hover:underline">{l.receiptNo}</Link> : "-"}</TableCell>
+                  <TableCell className={cn("text-right font-medium tabular-nums", l.points < 0 ? "text-danger" : "text-success")}>{l.points > 0 ? "+" : ""}{l.points}</TableCell>
                   <TableCell className="text-right tabular-nums">{l.balanceAfter}</TableCell>
                 </TableRow>
               ))}
@@ -67,8 +68,8 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
             <TableBody>
               {sales.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell><Link href={`/sales/${s.id}`} className="font-mono text-xs text-primary hover:underline">{s.receiptNo}</Link></TableCell>
-                  <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(s.createdAt))}</TableCell>
+                  <TableCell><Link href={`/sales/${s.id}`} className="font-mono text-sm text-primary hover:underline">{s.receiptNo}</Link></TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">{formatDateTime(new Date(s.createdAt))}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(s.total)}</TableCell>
                   <TableCell className="text-right tabular-nums">{s.pointsEarned}</TableCell>
                 </TableRow>

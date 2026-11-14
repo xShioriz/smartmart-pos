@@ -77,9 +77,9 @@ export function ReturnDialog({ saleId, items, isQr }: { saleId: string; items: I
                 <div key={i.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border p-3 text-sm">
                   <div className="min-w-0">
                     <p className="truncate font-medium">{i.name}</p>
-                    <p className="text-xs text-muted-foreground">ซื้อ {i.quantity} · คืนแล้ว {i.returnedQty} · คืนได้อีก {left}</p>
+                    <p className="text-sm text-muted-foreground">ซื้อ {i.quantity} · คืนแล้ว {i.returnedQty} · คืนได้อีก {left}</p>
                     {left > 0 && (
-                      <label className="mt-1 flex items-center gap-2 text-xs">
+                      <label className="mt-1 flex items-center gap-2 text-sm">
                         <input type="checkbox" checked={restock[i.id] ?? true} onChange={(e) => setRestock((s) => ({ ...s, [i.id]: e.target.checked }))} /> คืนเข้าสต็อก (ไม่ติ๊ก = ของเสีย ไม่กลับเข้าสต็อก)
                       </label>
                     )}
@@ -87,9 +87,9 @@ export function ReturnDialog({ saleId, items, isQr }: { saleId: string; items: I
                   {left > 0 ? (
                     <div className="text-right">
                       <Input inputMode="numeric" aria-label={`จำนวนที่คืน ${i.name}`} placeholder="0" className="h-8 w-20 text-center" value={qty[i.id] ?? ""} onChange={(e) => setQty((s) => ({ ...s, [i.id]: e.target.value.replace(/\D/g, "") }))} />
-                      {previewFor(i.id) && <p className="mt-1 text-xs tabular-nums text-green-700">คืน {formatMoney(previewFor(i.id)!)}</p>}
+                      {previewFor(i.id) && <p className="mt-1 text-sm tabular-nums text-success">คืน {formatMoney(previewFor(i.id)!)}</p>}
                     </div>
-                  ) : <span className="text-xs text-muted-foreground">คืนครบแล้ว</span>}
+                  ) : <span className="text-sm text-muted-foreground">คืนครบแล้ว</span>}
                 </div>
               );
             })}
@@ -98,7 +98,7 @@ export function ReturnDialog({ saleId, items, isQr }: { saleId: string; items: I
             <div className="space-y-2"><Label htmlFor="reason">เหตุผลการคืน (บังคับ)</Label><Input id="reason" maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} /></div>
             <div className="space-y-2"><Label htmlFor="note">{isQr ? "หมายเหตุการโอนเงินคืน (บังคับ)" : "หมายเหตุ (ไม่บังคับ)"}</Label><Input id="note" maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} placeholder={isQr ? "เช่น โอนคืนเข้าบัญชีลูกค้า 14:30" : ""} /></div>
           </div>
-          {isQr && <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">บิลนี้จ่ายด้วย PromptPay QR — ระบบไม่คืนเงินผ่าน Provider ให้โอนคืนลูกค้านอกระบบ แล้วบันทึกหมายเหตุที่นี่</p>}
+          {isQr && <p className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">บิลนี้จ่ายด้วย PromptPay QR — ระบบไม่คืนเงินผ่าน Provider ให้โอนคืนลูกค้านอกระบบ แล้วบันทึกหมายเหตุที่นี่</p>}
           <div className="flex items-baseline justify-between rounded-lg border bg-muted/40 p-3">
             <span className="text-sm">{isQr ? "ยอดที่ต้องโอนคืน" : "ยอดที่ต้องคืนเงินสด"}{preview && preview.pointsToReverse > 0 ? ` · หักแต้ม ${preview.pointsToReverse}` : ""}</span>
             <span className="text-2xl font-bold tabular-nums text-primary">{preview && hasLines ? formatMoney(preview.refundTotal) : "-"}</span>

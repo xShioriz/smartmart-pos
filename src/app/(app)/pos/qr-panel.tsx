@@ -113,13 +113,14 @@ export function QrPanel({ items, memberId, expectedTotal, totalLabel, initial, g
   if (!qr) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl bg-green-50 p-4 text-center">
-          <p className="text-sm text-green-800">ยอดที่ต้องชำระ</p>
-          <p className="text-4xl font-bold text-green-700 tabular-nums">{totalLabel}</p>
+        <div className="relative overflow-hidden rounded-xl bg-navy-gradient p-5 text-center text-white">
+          <span aria-hidden className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-lavender/20" />
+          <p className="relative text-sm text-lavender">ยอดที่ต้องชำระ</p>
+          <p className="relative font-heading text-display font-bold tabular-nums">{totalLabel}</p>
         </div>
         <p className="text-sm text-muted-foreground">สร้าง QR PromptPay ตามยอดบิล ลูกค้าสแกนจ่าย ระบบจะยืนยันกับ Provider อัตโนมัติ ยังไม่ตัดสต็อกจนกว่าจะได้รับเงินจริง (ยอด 20 – 150,000 บาท)</p>
-        {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-        <Button type="button" className="h-11 w-full text-base" onClick={create} disabled={busy}>
+        {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>}
+        <Button type="button" size="lg" className="w-full" onClick={create} disabled={busy}>
           {busy ? <Loader2 className="animate-spin" /> : <QrCode />} สร้าง QR PromptPay
         </Button>
       </div>
@@ -131,7 +132,7 @@ export function QrPanel({ items, memberId, expectedTotal, totalLabel, initial, g
   return (
     <div className="space-y-4">
       {qr.environment === "SANDBOX" && sandbox && (
-        <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-sm font-medium text-amber-900">SANDBOX — โหมดทดสอบ ไม่ใช่เงินจริง</p>
+        <p className="rounded-lg border border-warning/30 bg-warning-soft px-3 py-2 text-center text-sm font-medium text-warning">SANDBOX — โหมดทดสอบ ไม่ใช่เงินจริง</p>
       )}
 
       {pending && (
@@ -141,10 +142,10 @@ export function QrPanel({ items, memberId, expectedTotal, totalLabel, initial, g
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qr.qrImageUrl} alt="QR PromptPay สำหรับชำระเงิน" className="size-56 rounded-lg border bg-white object-contain p-2" />
             )}
-            <p className="text-2xl font-bold tabular-nums text-primary">{formatMoney(qr.amount)}</p>
+            <p className="font-heading text-page font-bold tabular-nums text-navy">{formatMoney(qr.amount)}</p>
             <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> รอลูกค้าชำระเงิน{remaining !== null && ` · หมดอายุใน ${mmss(remaining)}`}</p>
           </div>
-          {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>}
           <div className="flex gap-2">
             <Button type="button" variant="outline" className="flex-1" onClick={check} disabled={busy}><RefreshCw className={cn(busy && "animate-spin")} /> ตรวจสอบสถานะ</Button>
             <Button type="button" variant="outline" className="flex-1" onClick={cancel} disabled={busy}>ยกเลิก QR</Button>
@@ -153,11 +154,11 @@ export function QrPanel({ items, memberId, expectedTotal, totalLabel, initial, g
       )}
 
       {qr.status === "PAID" && qr.saleStatus === "COMPLETED" && (
-        <div className="flex flex-col items-center gap-2 py-4 text-green-700"><CheckCircle2 className="size-12" /><p className="font-semibold">ได้รับเงินแล้ว กำลังเปิดใบเสร็จ…</p></div>
+        <div className="flex flex-col items-center gap-2 py-4 text-success"><CheckCircle2 className="size-12" /><p className="font-semibold">ได้รับเงินแล้ว กำลังเปิดใบเสร็จ…</p></div>
       )}
 
       {qr.status === "PAID" && qr.saleStatus === "PAID_NEEDS_REVIEW" && (
-        <div className="space-y-2 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+        <div className="space-y-2 rounded-lg border border-danger/30 bg-danger-soft p-4 text-sm text-danger">
           <p className="flex items-center gap-2 font-semibold"><AlertTriangle className="size-5" /> ได้รับเงินแล้ว แต่สต็อกไม่พอสำหรับตัดขาย</p>
           <p>บิลนี้ถูกส่งให้ผู้ดูแลระบบตรวจสอบ (คืนเงินลูกค้าหรือทำรายการต่อ) กรุณาอย่าให้ลูกค้ารับสินค้า</p>
           <Button type="button" className="w-full" onClick={() => { setQr(null); renewKey(); onCompleted(""); }}>รับทราบ</Button>
@@ -165,8 +166,8 @@ export function QrPanel({ items, memberId, expectedTotal, totalLabel, initial, g
       )}
 
       {(qr.status === "FAILED" || qr.status === "EXPIRED") && (
-        <div className="space-y-3 rounded-lg border bg-muted/40 p-4 text-center">
-          <XCircle className="mx-auto size-10 text-destructive" />
+        <div className="space-y-3 rounded-xl border bg-lavender-50 p-4 text-center">
+          <XCircle className="mx-auto size-10 text-danger" />
           <p className="font-semibold">{qr.status === "EXPIRED" ? "QR หมดอายุ" : "ชำระเงินไม่สำเร็จ"}</p>
           <Button type="button" className="w-full" onClick={() => { renewKey(); setQr(null); setError(null); }}><RefreshCw /> สร้าง QR ใหม่</Button>
         </div>

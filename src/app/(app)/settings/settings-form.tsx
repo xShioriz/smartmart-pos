@@ -17,7 +17,7 @@ function Field({ id, label, hint, children }: { id: string; label: string; hint?
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -76,8 +76,8 @@ export function SettingsForm({ initial, payment }: { initial: SettingsInput; pay
                 </>
               ) : <Badge variant="destructive">ยังใช้ไม่ได้</Badge>}
             </p>
-            {!payment.enabled && payment.reason && <p className="text-xs text-muted-foreground">{payment.reason}</p>}
-            <p className="text-xs text-muted-foreground">คีย์ของ Provider ตั้งที่ Environment Variables ของเซิร์ฟเวอร์เท่านั้น ไม่แสดงและแก้ไขในหน้านี้</p>
+            {!payment.enabled && payment.reason && <p className="text-sm text-muted-foreground">{payment.reason}</p>}
+            <p className="text-sm text-muted-foreground">คีย์ของ Provider ตั้งที่ Environment Variables ของเซิร์ฟเวอร์เท่านั้น ไม่แสดงและแก้ไขในหน้านี้</p>
           </div>
         </div>
       </section>

@@ -27,6 +27,7 @@ export default async function ProductStockPage({ params }: { params: Promise<{ i
     <>
       <Link href="/inventory" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> กลับไปคลังสินค้า</Link>
       <PageHeader
+        eyebrow="Stock"
         title={product.name}
         description={`${product.sku} · ${product.categoryName} · คงเหลือรวม ${product.stockQty} ${product.unit} (ขั้นต่ำ ${product.minStock})`}
         action={!product.isActive ? <Badge variant="secondary">สินค้าปิดใช้งาน</Badge> : undefined}
@@ -55,13 +56,13 @@ export default async function ProductStockPage({ params }: { params: Promise<{ i
                 <TableBody>
                   {moves.rows.map((m) => (
                     <TableRow key={m.id}>
-                      <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(m.createdAt))}</TableCell>
-                      <TableCell className="text-xs">{m.batchNo ?? "-"}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm">{formatDateTime(new Date(m.createdAt))}</TableCell>
+                      <TableCell className="text-sm">{m.batchNo ?? "-"}</TableCell>
                       <TableCell><Badge variant="outline">{MOVEMENT_LABEL[m.type] ?? m.type}</Badge></TableCell>
-                      <TableCell className={cn("text-right tabular-nums font-medium", m.quantityChange < 0 ? "text-red-600" : "text-green-700")}>{m.quantityChange > 0 ? "+" : ""}{m.quantityChange}</TableCell>
+                      <TableCell className={cn("text-right tabular-nums font-medium", m.quantityChange < 0 ? "text-danger" : "text-success")}>{m.quantityChange > 0 ? "+" : ""}{m.quantityChange}</TableCell>
                       <TableCell className="text-right tabular-nums">{m.balanceAfter}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{m.note ?? "-"}</TableCell>
-                      <TableCell className="text-xs">{m.by}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{m.note ?? "-"}</TableCell>
+                      <TableCell className="text-sm">{m.by}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

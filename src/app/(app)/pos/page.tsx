@@ -11,7 +11,7 @@ export default async function PosPage() {
   const products = await listPosProducts();
   return (
     <>
-      <PageHeader title="ขายหน้าร้าน (POS)" description="สแกนหรือพิมพ์ SKU/บาร์โค้ดแล้วกด Enter · F2 = ไปที่ช่องค้นหา" />
+      <PageHeader eyebrow="Point of sale" title="ขายหน้าร้าน (POS)" description="สแกนหรือพิมพ์ SKU/บาร์โค้ดแล้วกด Enter · F2 = ไปที่ช่องค้นหา" />
       {products.length === 0 ? (
         <EmptyState icon={PackageSearch} title="ยังไม่มีสินค้าที่เปิดขาย" description="ให้ผู้ดูแลระบบเพิ่มสินค้าและรับสต็อกเข้าก่อน" />
       ) : (

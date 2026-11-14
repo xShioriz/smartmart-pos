@@ -242,7 +242,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
       {/* ซ้าย: ค้นหา + สินค้า */}
       <section className="min-w-0">
         <div className="relative mb-3">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" strokeWidth={1.8} />
           <Input
             ref={searchRef}
             value={query}
@@ -250,23 +250,23 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSearchEnter(); } }}
             placeholder="สแกนบาร์โค้ด / พิมพ์ SKU หรือชื่อสินค้า"
             aria-label="ค้นหาสินค้า"
-            className="h-10 pl-9 text-base"
+            className="pl-11 text-base"
             autoFocus
           />
           {query && (
-            <button type="button" onClick={() => { setQuery(""); searchRef.current?.focus(); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted" aria-label="ล้างคำค้น"><X className="size-4" /></button>
+            <button type="button" onClick={() => { setQuery(""); searchRef.current?.focus(); }} className="absolute right-0 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground hover:bg-lavender-100 hover:text-navy" aria-label="ล้างคำค้น"><X className="size-5" /></button>
           )}
         </div>
         <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
           {[["all", "ทั้งหมด"] as const, ...categories].map(([id, name]) => (
             <button key={id} type="button" onClick={() => setCategoryId(id)}
-              className={cn("shrink-0 rounded-full border px-3 py-1 text-sm", categoryId === id ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}>
+              className={cn("inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 font-heading text-sm font-semibold transition-colors", categoryId === id ? "border-blue bg-blue text-white" : "border-border bg-card text-navy hover:bg-lavender-100")}>
               {name}
             </button>
           ))}
         </div>
         {filtered.length === 0 ? (
-          <p className="rounded-xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">ไม่พบสินค้าที่ตรงกับคำค้น</p>
+          <p className="rounded-xl border border-dashed border-border-strong bg-card p-10 text-center text-sm text-muted-foreground">ไม่พบสินค้าที่ตรงกับคำค้น</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:max-h-[calc(100vh-17rem)] lg:overflow-y-auto lg:pr-1 xl:grid-cols-4">
             {filtered.map((p) => {
@@ -274,12 +274,12 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
               const out = p.sellable <= 0;
               return (
                 <button key={p.id} type="button" onClick={() => add(p)} disabled={out}
-                  className={cn("relative flex flex-col items-start gap-1 rounded-xl border bg-card p-3 text-left transition hover:border-primary hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50", inCart > 0 && "border-primary ring-1 ring-primary")}>
-                  {inCart > 0 && <span className="absolute right-2 top-2 rounded-full bg-primary px-2 text-xs font-medium text-primary-foreground">{inCart}</span>}
-                  <span className="line-clamp-2 min-h-10 pr-6 text-sm font-medium leading-5">{p.name}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground">{p.sku}</span>
-                  <span className="mt-1 text-base font-semibold text-primary tabular-nums">{formatMoney(p.price)}</span>
-                  <span className={cn("text-xs", out ? "text-destructive" : p.sellable <= 5 ? "text-amber-700" : "text-muted-foreground")}>{out ? "หมด" : `เหลือ ${p.sellable} ${p.unit}`}</span>
+                  className={cn("relative flex flex-col items-start gap-1 rounded-xl border bg-card p-4 text-left transition hover:border-blue hover:shadow-float disabled:cursor-not-allowed disabled:opacity-50", inCart > 0 && "border-blue ring-2 ring-blue/30")}>
+                  {inCart > 0 && <span className="absolute right-2 top-2 rounded-full bg-blue px-2.5 font-heading text-sm font-semibold text-white">{inCart}</span>}
+                  <span className="line-clamp-2 min-h-11 pr-6 text-sm font-semibold leading-5 text-navy">{p.name}</span>
+                  <span className="font-mono text-sm text-muted-foreground">{p.sku}</span>
+                  <span className="mt-1 font-heading text-lg font-bold text-navy tabular-nums">{formatMoney(p.price)}</span>
+                  <span className={cn("text-sm", out ? "text-danger" : p.sellable <= 5 ? "text-warning" : "text-muted-foreground")}>{out ? "หมด" : `เหลือ ${p.sellable} ${p.unit}`}</span>
                 </button>
               );
             })}
@@ -296,7 +296,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
         aria-label="ตะกร้าสินค้า"
       >
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <h2 className="flex items-center gap-2 font-semibold"><ShoppingCart className="size-4" /> ตะกร้า <span className="text-sm font-normal text-muted-foreground">({lines.length} รายการ / {itemCount} ชิ้น)</span></h2>
+          <h2 className="flex items-center gap-2 font-heading text-lg font-semibold"><ShoppingCart className="size-5" strokeWidth={1.8} /> ตะกร้า <span className="text-sm font-normal text-muted-foreground">({lines.length} รายการ / {itemCount} ชิ้น)</span></h2>
           <div className="flex items-center gap-1">
             {lines.length > 0 && <Button variant="ghost" size="sm" onClick={() => setClearOpen(true)}><Trash2 /> ล้าง</Button>}
             <Button variant="outline" size="sm" className="lg:hidden" onClick={() => setCartOpen(false)}><X /> ปิด</Button>
@@ -314,22 +314,22 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
               {lines.map(({ p, qty }) => (
                 <li key={p.id} className="space-y-2 px-4 py-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0"><p className="truncate text-sm font-medium">{p.name}</p><p className="text-xs text-muted-foreground">{formatMoney(p.price)} / {p.unit}</p>{quoteLine(p.id)?.promotionName && <p className="mt-0.5 flex items-center gap-1 text-xs text-green-700"><Tag className="size-3" /> {quoteLine(p.id)!.promotionName}</p>}</div>
-                    <button type="button" onClick={() => dispatch({ type: "remove", productId: p.id })} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive" aria-label={`ลบ ${p.name}`}><X className="size-4" /></button>
+                    <div className="min-w-0"><p className="truncate text-sm font-medium">{p.name}</p><p className="text-sm text-muted-foreground">{formatMoney(p.price)} / {p.unit}</p>{quoteLine(p.id)?.promotionName && <p className="mt-0.5 flex items-center gap-1 text-sm text-success"><Tag className="size-3" /> {quoteLine(p.id)!.promotionName}</p>}</div>
+                    <button type="button" onClick={() => dispatch({ type: "remove", productId: p.id })} className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-danger-soft hover:text-danger" aria-label={`ลบ ${p.name}`}><X className="size-5" /></button>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <Button size="icon-sm" variant="outline" className="max-lg:size-10" onClick={() => setQty(p, qty - 1)} aria-label="ลดจำนวน"><Minus /></Button>
+                      <Button size="icon-sm" variant="outline" onClick={() => setQty(p, qty - 1)} aria-label="ลดจำนวน"><Minus /></Button>
                       <Input
                         value={qty}
                         inputMode="numeric"
                         aria-label={`จำนวน ${p.name}`}
-                        className="h-7 w-14 px-1 text-center tabular-nums max-lg:h-10 max-lg:w-16"
+                        className="w-16 px-1 text-center tabular-nums"
                         onChange={(e) => { const n = parseInt(e.target.value.replace(/\D/g, ""), 10); if (!Number.isNaN(n)) setQty(p, n); }}
                       />
-                      <Button size="icon-sm" variant="outline" className="max-lg:size-10" onClick={() => setQty(p, qty + 1)} aria-label="เพิ่มจำนวน"><Plus /></Button>
+                      <Button size="icon-sm" variant="outline" onClick={() => setQty(p, qty + 1)} aria-label="เพิ่มจำนวน"><Plus /></Button>
                     </div>
-                    <span className="text-right tabular-nums">{Number(quoteLine(p.id)?.discount ?? 0) > 0 ? (<><span className="mr-1 text-xs text-muted-foreground line-through">{baht(satang(p.price) * qty)}</span><span className="font-medium">{formatMoney(quoteLine(p.id)!.lineTotal === quoteLine(p.id)!.net ? quoteLine(p.id)!.net : (Number(quoteLine(p.id)!.lineTotal) - Number(quoteLine(p.id)!.discount)).toFixed(2))}</span></>) : <span className="font-medium">{baht(satang(p.price) * qty)}</span>}</span>
+                    <span className="text-right tabular-nums">{Number(quoteLine(p.id)?.discount ?? 0) > 0 ? (<><span className="mr-1 text-sm text-muted-foreground line-through">{baht(satang(p.price) * qty)}</span><span className="font-medium">{formatMoney(quoteLine(p.id)!.lineTotal === quoteLine(p.id)!.net ? quoteLine(p.id)!.net : (Number(quoteLine(p.id)!.lineTotal) - Number(quoteLine(p.id)!.discount)).toFixed(2))}</span></>) : <span className="font-medium">{baht(satang(p.price) * qty)}</span>}</span>
                   </div>
                 </li>
               ))}
@@ -339,26 +339,26 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
         <div className="space-y-3 border-t p-4">
           <div className="flex items-baseline justify-between"><span className="text-sm text-muted-foreground">ยอดรวม</span><span className="tabular-nums">{quoteReady ? formatMoney(q!.data!.subtotal) : baht(grossSatang)}</span></div>
           {quoteReady && Number(q!.data!.itemDiscount) > 0 && (
-            <div className="flex items-baseline justify-between text-sm text-green-700"><span>ส่วนลดรายการ</span><span className="tabular-nums">-{formatMoney(q!.data!.itemDiscount)}</span></div>
+            <div className="flex items-baseline justify-between text-sm text-success"><span>ส่วนลดรายการ</span><span className="tabular-nums">-{formatMoney(q!.data!.itemDiscount)}</span></div>
           )}
           {quoteReady && Number(q!.data!.billDiscount) > 0 && (
-            <div className="flex items-baseline justify-between text-sm text-green-700"><span className="truncate pr-2">{q!.data!.billPromotionName ?? "ส่วนลดทั้งบิล"}</span><span className="tabular-nums">-{formatMoney(q!.data!.billDiscount)}</span></div>
+            <div className="flex items-baseline justify-between text-sm text-success"><span className="truncate pr-2">{q!.data!.billPromotionName ?? "ส่วนลดทั้งบิล"}</span><span className="tabular-nums">-{formatMoney(q!.data!.billDiscount)}</span></div>
           )}
-          <div className="flex items-baseline justify-between"><span className="font-semibold">ยอดสุทธิ</span><span className="text-2xl font-bold text-primary tabular-nums">{lines.length && !quoteReady ? "…" : baht(totalSatang)}</span></div>
-          {quoteReady && member && q!.data!.points > 0 && <p className="flex items-center gap-1 text-xs text-green-800"><Star className="size-3" /> สมาชิกจะได้ {q!.data!.points} แต้มจากบิลนี้</p>}
-          {q?.error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{q.error}</p>}
-          <Button className="h-11 w-full text-base" disabled={!lines.length || !quoteReady} onClick={openPay}>{lines.length && !quoteReady && !q?.error ? <><Loader2 className="animate-spin" /> กำลังคำนวณราคา</> : "ชำระเงิน"}</Button>
-          <p className="text-center text-[11px] text-muted-foreground">ราคาและโปรโมชั่นคำนวณโดยเซิร์ฟเวอร์ และคำนวณซ้ำอีกครั้งตอนยืนยัน</p>
+          <div className="flex items-baseline justify-between"><span className="font-semibold">ยอดสุทธิ</span><span className="font-heading text-page font-bold text-navy tabular-nums">{lines.length && !quoteReady ? "…" : baht(totalSatang)}</span></div>
+          {quoteReady && member && q!.data!.points > 0 && <p className="flex items-center gap-1 text-sm text-success"><Star className="size-3" /> สมาชิกจะได้ {q!.data!.points} แต้มจากบิลนี้</p>}
+          {q?.error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{q.error}</p>}
+          <Button size="lg" className="w-full" disabled={!lines.length || !quoteReady} onClick={openPay}>{lines.length && !quoteReady && !q?.error ? <><Loader2 className="animate-spin" /> กำลังคำนวณราคา</> : "ชำระเงิน"}</Button>
+          <p className="text-center text-sm text-muted-foreground">ราคาและโปรโมชั่นคำนวณโดยเซิร์ฟเวอร์ และคำนวณซ้ำอีกครั้งตอนยืนยัน</p>
         </div>
       </aside>
 
       {/* แถบสรุปตะกร้า (จอเล็ก) */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center md:left-16 justify-between gap-3 border-t bg-card px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center md:left-16 justify-between gap-3 border-t bg-card px-4 py-3 shadow-float lg:hidden">
         <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">{lines.length} รายการ / {itemCount} ชิ้น</p>
-          <p className="truncate text-xl font-bold text-primary tabular-nums">{lines.length && !quoteReady ? "…" : baht(totalSatang)}</p>
+          <p className="text-sm text-muted-foreground">{lines.length} รายการ / {itemCount} ชิ้น</p>
+          <p className="truncate font-heading text-xl font-bold text-navy tabular-nums">{lines.length && !quoteReady ? "…" : baht(totalSatang)}</p>
         </div>
-        <Button className="h-11 shrink-0 px-5 text-base" onClick={() => setCartOpen(true)}><ShoppingCart /> ดูตะกร้า</Button>
+        <Button size="lg" className="shrink-0 px-5" onClick={() => setCartOpen(true)}><ShoppingCart /> ดูตะกร้า</Button>
       </div>
 
       {/* ชำระเงิน */}
@@ -372,7 +372,7 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
             <Button type="button" role="tab" aria-selected={method === "cash"} variant={method === "cash" ? "default" : "outline"} disabled={qrLocked || pending} onClick={() => setMethod("cash")}><Banknote /> เงินสด</Button>
             <Button type="button" role="tab" aria-selected={method === "qr"} variant={method === "qr" ? "default" : "outline"} disabled={qrLocked || pending || !payment.enabled} title={payment.enabled ? undefined : payment.reason} onClick={() => setMethod("qr")}><QrCode /> PromptPay QR</Button>
           </div>
-          {!payment.enabled && <p className="text-xs text-muted-foreground">QR ยังใช้ไม่ได้: {payment.reason}</p>}
+          {!payment.enabled && <p className="text-sm text-muted-foreground">QR ยังใช้ไม่ได้: {payment.reason}</p>}
 
           {method === "qr" && payment.enabled ? (
             <QrPanel
@@ -389,9 +389,10 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
             />
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); confirmPay(); }} className="space-y-4">
-              <div className="rounded-xl bg-green-50 p-4 text-center">
-                <p className="text-sm text-green-800">ยอดที่ต้องชำระ</p>
-                <p className="text-4xl font-bold text-green-700 tabular-nums">{baht(totalSatang)}</p>
+              <div className="relative overflow-hidden rounded-xl bg-navy-gradient p-5 text-center text-white">
+                <span aria-hidden className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-lavender/20" />
+                <p className="relative text-sm text-lavender">ยอดที่ต้องชำระ</p>
+                <p className="relative font-heading text-display font-bold tabular-nums">{baht(totalSatang)}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="paid">รับเงินมา (บาท)</Label>
@@ -409,13 +410,13 @@ export function PosTerminal({ products, payment }: { products: PosProduct[]; pay
                   ))}
                 </div>
               </div>
-              <div className={cn("flex items-baseline justify-between rounded-lg border p-3", enough ? "border-green-300 bg-green-50" : "bg-muted/40")}>
+              <div className={cn("flex items-baseline justify-between rounded-xl border p-3", enough ? "border-success/30 bg-success-soft" : "bg-lavender-50")}>
                 <span className="text-sm">{paidSatang === null ? "เงินทอน" : enough ? "เงินทอน" : "ยังขาด"}</span>
-                <span className={cn("text-2xl font-bold tabular-nums", enough ? "text-green-700" : "text-destructive")}>
+                <span className={cn("font-heading text-xl font-bold tabular-nums", enough ? "text-success" : "text-danger")}>
                   {paidSatang === null ? "-" : baht(Math.abs(paidSatang - totalSatang))}
                 </span>
               </div>
-              {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+              {error && <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm font-medium text-danger">{error}</p>}
               <DialogFooter>
                 <Button type="button" variant="outline" disabled={pending} onClick={() => setPayOpen(false)}>ยกเลิก</Button>
                 <Button type="submit" disabled={!enough || pending} className="min-w-32">{pending && <Loader2 className="animate-spin" />} ยืนยันการขาย</Button>

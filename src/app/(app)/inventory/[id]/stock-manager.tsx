@@ -55,9 +55,9 @@ export function StockManager({ isAdmin, productId, unit, defaultCost, batches }:
             <TableBody>
               {batches.map((b) => (
                 <TableRow key={b.id} className={b.remainingQty === 0 ? "opacity-50" : ""}>
-                  <TableCell className="font-mono text-xs">{b.batchNo}</TableCell>
+                  <TableCell className="font-mono text-sm">{b.batchNo}</TableCell>
                   <TableCell className="tabular-nums">{b.expiryDate ?? "ไม่มี"}</TableCell>
-                  <TableCell className="text-xs">{b.receivedAt.slice(0, 10)}</TableCell>
+                  <TableCell className="text-sm">{b.receivedAt.slice(0, 10)}</TableCell>
                   {isAdmin && <TableCell className="text-right tabular-nums">{b.costPrice ? formatMoney(b.costPrice) : "-"}</TableCell>}
                   <TableCell className="text-right tabular-nums">{b.initialQty}</TableCell>
                   <TableCell className="text-right font-medium tabular-nums">{b.remainingQty}</TableCell>

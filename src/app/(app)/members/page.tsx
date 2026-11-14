@@ -30,7 +30,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="สมาชิก" description={`ทั้งหมด ${data.total.toLocaleString("th-TH")} คน · ได้แต้มตามยอดซื้อสุทธิ (ตั้งอัตราที่การตั้งค่า points_per_baht)`} />
+      <PageHeader eyebrow="Members" title="สมาชิก" description={`ทั้งหมด ${data.total.toLocaleString("th-TH")} คน · ได้แต้มตามยอดซื้อสุทธิ (ตั้งอัตราที่การตั้งค่า points_per_baht)`} />
       <form className="mb-4 flex max-w-lg gap-2" role="search">
         <input type="hidden" name="sort" value={sort.key} />
         <input type="hidden" name="dir" value={sort.dir} />

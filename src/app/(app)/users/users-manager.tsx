@@ -62,7 +62,7 @@ export function UsersManager({ users, meId, sortLinks }: { users: UserRow[]; meI
             <TableBody>
               {users.map((u) => (
                 <TableRow key={u.id}>
-                  <TableCell className="font-medium">{u.name}{u.id === meId && <span className="ml-2 text-xs text-muted-foreground">(คุณ)</span>}</TableCell>
+                  <TableCell className="font-medium">{u.name}{u.id === meId && <span className="ml-2 text-sm text-muted-foreground">(คุณ)</span>}</TableCell>
                   <TableCell>{u.email}</TableCell>
                   <TableCell><Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>{ROLE_LABEL[u.role]}</Badge></TableCell>
                   <TableCell><Badge variant={u.isActive ? "outline" : "destructive"}>{u.isActive ? "ใช้งาน" : "ปิดใช้งาน"}</Badge></TableCell>

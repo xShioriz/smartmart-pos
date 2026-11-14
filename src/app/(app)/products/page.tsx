@@ -40,7 +40,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <PageHeader title="สินค้า" description={`ทั้งหมด ${data.total.toLocaleString("th-TH")} รายการ`} />
+      <PageHeader eyebrow="Products" title="สินค้า" description={`ทั้งหมด ${data.total.toLocaleString("th-TH")} รายการ`} />
       <form className="mb-4 flex flex-wrap items-center gap-2" role="search">
         <input type="hidden" name="sort" value={sort.key} />
         <input type="hidden" name="dir" value={sort.dir} />

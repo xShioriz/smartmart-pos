@@ -50,7 +50,7 @@ export function ProductsManager({ items, categories, filtered, noCategories, sor
         <Button onClick={() => setDlg({ kind: "form", row: null })} disabled={noCategories} title={noCategories ? "ต้องมีหมวดหมู่ก่อน" : undefined}><Plus /> เพิ่มสินค้า</Button>
       </div>
 
-      {noCategories && <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">ยังไม่มีหมวดหมู่ ต้องสร้างหมวดหมู่ก่อนจึงจะเพิ่มสินค้าได้</p>}
+      {noCategories && <p className="mb-4 rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">ยังไม่มีหมวดหมู่ ต้องสร้างหมวดหมู่ก่อนจึงจะเพิ่มสินค้าได้</p>}
 
       {items.length === 0 ? (
         <EmptyState
@@ -76,15 +76,15 @@ export function ProductsManager({ items, categories, filtered, noCategories, sor
             <TableBody>
               {items.map((p) => (
                 <TableRow key={p.id} className={p.isActive ? "" : "opacity-60"}>
-                  <TableCell className="font-mono text-xs">{p.sku}</TableCell>
+                  <TableCell className="font-mono text-sm">{p.sku}</TableCell>
                   <TableCell>
                     <div className="font-medium">{p.name}</div>
-                    {p.barcode && <div className="text-xs text-muted-foreground">{p.barcode}</div>}
+                    {p.barcode && <div className="text-sm text-muted-foreground">{p.barcode}</div>}
                   </TableCell>
                   <TableCell>{p.categoryName}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(p.costPrice)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(p.price)}</TableCell>
-                  <TableCell className="text-right"><StockBadge qty={p.stockQty} min={p.minStock} /> <span className="text-xs text-muted-foreground">{p.unit}</span></TableCell>
+                  <TableCell className="text-right"><StockBadge qty={p.stockQty} min={p.minStock} /> <span className="text-sm text-muted-foreground">{p.unit}</span></TableCell>
                   <TableCell><Badge variant={p.isActive ? "outline" : "secondary"}>{p.isActive ? "ใช้งาน" : "ปิดใช้งาน"}</Badge></TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

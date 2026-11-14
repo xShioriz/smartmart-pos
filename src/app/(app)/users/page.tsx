@@ -15,7 +15,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const links = sortLinks(KEYS, sort, (s) => `/users?sort=${s.key}&dir=${s.dir}`);
   return (
     <>
-      <PageHeader title="ผู้ใช้งาน" description="จัดการบัญชีผู้ดูแลระบบและแคชเชียร์" />
+      <PageHeader eyebrow="Users" title="ผู้ใช้งาน" description="จัดการบัญชีผู้ดูแลระบบและแคชเชียร์" />
       <UsersManager
         meId={me.id}
         sortLinks={links}

@@ -9,7 +9,7 @@ export default async function SettingsPage() {
   const [settings, pay] = await Promise.all([getSettings(), Promise.resolve(describePaymentConfig())]);
   return (
     <>
-      <PageHeader title="ตั้งค่า" description="ข้อมูลร้านบนใบเสร็จ อัตราแต้มสะสม และค่าการแจ้งเตือน/QR — การเปลี่ยนแปลงมีผลกับบิลถัดไป และถูกบันทึกใน Audit Log" />
+      <PageHeader eyebrow="Settings" title="ตั้งค่า" description="ข้อมูลร้านบนใบเสร็จ อัตราแต้มสะสม และค่าการแจ้งเตือน/QR — การเปลี่ยนแปลงมีผลกับบิลถัดไป และถูกบันทึกใน Audit Log" />
       <SettingsForm initial={settings} payment={pay} />
     </>
   );

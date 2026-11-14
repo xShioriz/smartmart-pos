@@ -42,7 +42,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="ประวัติการขาย" description={user.role === "ADMIN" ? `ทั้งหมด ${data.total.toLocaleString("th-TH")} บิล` : `บิลของคุณ ${data.total.toLocaleString("th-TH")} บิล`} />
+      <PageHeader eyebrow="Sales history" title="ประวัติการขาย" description={user.role === "ADMIN" ? `ทั้งหมด ${data.total.toLocaleString("th-TH")} บิล` : `บิลของคุณ ${data.total.toLocaleString("th-TH")} บิล`} />
       <form className="mb-4 flex flex-wrap items-center gap-2" role="search">
         <input type="hidden" name="sort" value={sort.key} />
         <input type="hidden" name="dir" value={sort.dir} />
@@ -71,15 +71,15 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
             <TableBody>
               {data.rows.map((s) => (
                 <TableRow key={s.id}>
-                  <TableCell><Link href={`/sales/${s.id}`} className="font-mono text-xs font-medium text-primary hover:underline">{s.receiptNo ?? "(ยังไม่มีเลขที่) ดูรายละเอียด"}</Link></TableCell>
-                  <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(s.createdAt))}</TableCell>
+                  <TableCell><Link href={`/sales/${s.id}`} className="font-mono text-sm font-medium text-primary hover:underline">{s.receiptNo ?? "(ยังไม่มีเลขที่) ดูรายละเอียด"}</Link></TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">{formatDateTime(new Date(s.createdAt))}</TableCell>
                   <TableCell>{s.cashier}</TableCell>
                   <TableCell className="text-right tabular-nums">{s.itemCount}</TableCell>
                   <TableCell className="text-right font-medium tabular-nums">{formatMoney(s.total)}</TableCell>
                   <TableCell>{METHOD_LABEL[s.paymentMethod] ?? s.paymentMethod}</TableCell>
                   <TableCell><Badge variant={s.status === "COMPLETED" ? "outline" : s.status === "PAID_NEEDS_REVIEW" ? "destructive" : "secondary"}>{STATUS_LABEL[s.status] ?? s.status}</Badge></TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-3 text-xs">
+                    <div className="flex justify-end gap-3 text-sm">
                       <Link href={`/sales/${s.id}`} className="text-primary hover:underline">รายละเอียด{user.role === "ADMIN" && (s.status === "COMPLETED" || s.status === "PARTIALLY_RETURNED") ? " / คืนสินค้า" : ""}</Link>
                       {s.receiptNo && <Link href={`/receipt/${s.id}`} className="text-muted-foreground hover:underline">ใบเสร็จ</Link>}
                     </div>

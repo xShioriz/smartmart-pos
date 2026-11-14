@@ -27,10 +27,10 @@ type Dlg = { kind: "form"; row: Item | null } | { kind: "toggle"; row: Item } | 
 
 const SCOPE: Record<string, string> = { PRODUCT: "สินค้า", CATEGORY: "หมวดหมู่", BILL: "ทั้งบิล" };
 const STATUS: Record<Item["status"], { label: string; cls: string }> = {
-  ACTIVE: { label: "กำลังใช้งาน", cls: "bg-green-100 text-green-800" },
-  SCHEDULED: { label: "ยังไม่เริ่ม", cls: "bg-blue-100 text-blue-800" },
-  EXPIRED: { label: "หมดอายุ", cls: "bg-slate-200 text-slate-700" },
-  DISABLED: { label: "ปิดใช้งาน", cls: "bg-slate-200 text-slate-700" },
+  ACTIVE: { label: "กำลังใช้งาน", cls: "bg-success-soft text-success" },
+  SCHEDULED: { label: "ยังไม่เริ่ม", cls: "bg-sky-soft text-navy" },
+  EXPIRED: { label: "หมดอายุ", cls: "bg-lavender-100 text-muted-foreground" },
+  DISABLED: { label: "ปิดใช้งาน", cls: "bg-lavender-100 text-muted-foreground" },
 };
 const selectClass = "h-11 w-full rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
@@ -55,7 +55,7 @@ export function PromotionsManager({ items, products, categories, sortLinks }: { 
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-xs text-muted-foreground">ส่วนลดรายการ: ต่อบรรทัดใช้ได้อันเดียว · ส่วนลดทั้งบิล: ใช้ได้อันเดียวและคิดจากยอดหลังลดรายการ · ส่วนลดบาทของสินค้า/หมวดคิดต่อหน่วย</p>
+        <p className="text-sm text-muted-foreground">ส่วนลดรายการ: ต่อบรรทัดใช้ได้อันเดียว · ส่วนลดทั้งบิล: ใช้ได้อันเดียวและคิดจากยอดหลังลดรายการ · ส่วนลดบาทของสินค้า/หมวดคิดต่อหน่วย</p>
         <Button onClick={() => open(null)}><Plus /> เพิ่มโปรโมชั่น</Button>
       </div>
 
@@ -78,7 +78,7 @@ export function PromotionsManager({ items, products, categories, sortLinks }: { 
                   <TableCell className="max-w-48 truncate" title={p.targetLabel}>{p.targetLabel}</TableCell>
                   <TableCell className="text-right tabular-nums">{discountLabel(p)}</TableCell>
                   <TableCell className="text-right tabular-nums">{p.minPurchase ? formatMoney(p.minPurchase) : "-"}</TableCell>
-                  <TableCell className="whitespace-nowrap text-xs">{fmtLocal(p.startsAt)}<br />ถึง {fmtLocal(p.endsAt)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">{fmtLocal(p.startsAt)}<br />ถึง {fmtLocal(p.endsAt)}</TableCell>
                   <TableCell><Badge className={STATUS[p.status].cls}>{STATUS[p.status].label}</Badge></TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

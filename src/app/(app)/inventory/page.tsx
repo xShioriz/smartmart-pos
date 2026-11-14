@@ -44,6 +44,7 @@ export default async function InventoryPage({ searchParams }: { searchParams: Pr
   return (
     <>
       <PageHeader
+        eyebrow="Inventory"
         title="คลังสินค้า"
         description={isAdmin ? "ดูคงเหลือ รับสินค้าเข้า และปรับสต็อกราย ล็อต" : "ดูจำนวนคงเหลือ (อ่านอย่างเดียว)"}
         action={isAdmin ? <Link href="/inventory/reorder" className="inline-flex h-8 items-center rounded-md border bg-card px-3 text-sm font-medium hover:bg-muted">รายการที่ควรสั่งซื้อ</Link> : undefined}
@@ -84,7 +85,7 @@ async function StockTab({ q, filter, isAdmin, sort }: { q?: string; filter: Inve
           {(Object.keys(FILTER_LABEL) as InventoryFilter[]).map((k) => <option key={k} value={k}>{FILTER_LABEL[k]}</option>)}
         </select>
         <Button type="submit" variant="outline"><Search /> ค้นหา</Button>
-        <span className="text-xs text-muted-foreground">“ใกล้หมดอายุ” = ภายใน {nearDays} วัน</span>
+        <span className="text-sm text-muted-foreground">“ใกล้หมดอายุ” = ภายใน {nearDays} วัน</span>
       </form>
       {rows.length === 0 ? (
         <EmptyState icon={Boxes} title={q || filter !== "all" ? "ไม่พบสินค้าตามเงื่อนไข" : "ยังไม่มีสินค้า"} />
@@ -101,10 +102,10 @@ async function StockTab({ q, filter, isAdmin, sort }: { q?: string; filter: Inve
             <TableBody>
               {rows.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-mono text-xs">{r.sku}</TableCell>
+                  <TableCell className="font-mono text-sm">{r.sku}</TableCell>
                   <TableCell><Link href={`/inventory/${r.id}`} className="font-medium hover:text-primary hover:underline">{r.name}</Link></TableCell>
                   <TableCell>{r.categoryName}</TableCell>
-                  <TableCell className="text-right tabular-nums">{r.stockQty.toLocaleString("th-TH")} <span className="text-xs text-muted-foreground">{r.unit}</span></TableCell>
+                  <TableCell className="text-right tabular-nums">{r.stockQty.toLocaleString("th-TH")} <span className="text-sm text-muted-foreground">{r.unit}</span></TableCell>
                   <TableCell className="text-right tabular-nums">{r.sellableQty.toLocaleString("th-TH")}</TableCell>
                   <TableCell className="text-right tabular-nums">{r.minStock}</TableCell>
                   <TableCell className="tabular-nums">{r.nextExpiry ?? "-"}</TableCell>
@@ -159,14 +160,14 @@ async function MovementsTab({ type, page, sort }: { type?: string; page: number;
             <TableBody>
               {data.rows.map((m) => (
                 <TableRow key={m.id}>
-                  <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(m.createdAt))}</TableCell>
-                  <TableCell><div className="font-medium">{m.productName}</div><div className="font-mono text-xs text-muted-foreground">{m.sku}</div></TableCell>
-                  <TableCell className="text-xs">{m.batchNo ?? "-"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">{formatDateTime(new Date(m.createdAt))}</TableCell>
+                  <TableCell><div className="font-medium">{m.productName}</div><div className="font-mono text-sm text-muted-foreground">{m.sku}</div></TableCell>
+                  <TableCell className="text-sm">{m.batchNo ?? "-"}</TableCell>
                   <TableCell><Badge variant="outline">{MOVEMENT_LABEL[m.type] ?? m.type}</Badge></TableCell>
-                  <TableCell className={cn("text-right tabular-nums font-medium", m.quantityChange < 0 ? "text-red-600" : "text-green-700")}>{m.quantityChange > 0 ? "+" : ""}{m.quantityChange}</TableCell>
+                  <TableCell className={cn("text-right tabular-nums font-medium", m.quantityChange < 0 ? "text-danger" : "text-success")}>{m.quantityChange > 0 ? "+" : ""}{m.quantityChange}</TableCell>
                   <TableCell className="text-right tabular-nums">{m.balanceAfter}</TableCell>
-                  <TableCell className="max-w-56 truncate text-xs text-muted-foreground" title={m.note ?? ""}>{m.note ?? "-"}</TableCell>
-                  <TableCell className="text-xs">{m.by}</TableCell>
+                  <TableCell className="max-w-56 truncate text-sm text-muted-foreground" title={m.note ?? ""}>{m.note ?? "-"}</TableCell>
+                  <TableCell className="text-sm">{m.by}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

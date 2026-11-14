@@ -9,7 +9,7 @@ export default async function NotificationsPage() {
   const items = await listNotifications(false);
   return (
     <>
-      <PageHeader title="การแจ้งเตือน" description="สินค้าใกล้หมด/หมด, ใกล้หมดอายุ/หมดอายุ และรายการชำระเงินที่ต้องตรวจสอบ — รายการจะหายเองเมื่อแก้ปัญหาแล้ว" />
+      <PageHeader eyebrow="Notifications" title="การแจ้งเตือน" description="สินค้าใกล้หมด/หมด, ใกล้หมดอายุ/หมดอายุ และรายการชำระเงินที่ต้องตรวจสอบ — รายการจะหายเองเมื่อแก้ปัญหาแล้ว" />
       <NotificationList items={items} />
     </>
   );

@@ -31,6 +31,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
     <>
       <Link href="/sales" className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> ประวัติการขาย</Link>
       <PageHeader
+        eyebrow="Sale"
         title={sale.receiptNo ?? "บิลที่ยังไม่มีเลขใบเสร็จ"}
         description={`${formatDateTime(new Date(sale.createdAt))} · พนักงาน ${sale.cashier}`}
         action={
@@ -53,7 +54,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
             <TableBody>
               {sale.items.map((i) => (
                 <TableRow key={i.id}>
-                  <TableCell><div className="font-medium">{i.name}</div><div className="font-mono text-xs text-muted-foreground">{i.sku}</div>{i.promotionName && <div className="text-xs text-green-700">{i.promotionName}</div>}</TableCell>
+                  <TableCell><div className="font-medium">{i.name}</div><div className="font-mono text-sm text-muted-foreground">{i.sku}</div>{i.promotionName && <div className="text-sm text-success">{i.promotionName}</div>}</TableCell>
                   <TableCell className="text-right tabular-nums">{i.quantity}</TableCell>
                   <TableCell className="text-right tabular-nums">{i.returnedQty > 0 ? i.returnedQty : "-"}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(i.unitPrice)}</TableCell>
@@ -94,13 +95,13 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
             {sale.returns.map((r) => (
               <div key={r.id} className="rounded-xl border bg-card p-4 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-mono text-xs font-medium">{r.returnNo} <span className="font-sans text-muted-foreground">· {formatDateTime(new Date(r.createdAt))} · โดย {r.by}</span></p>
+                  <p className="font-mono text-sm font-medium">{r.returnNo} <span className="font-sans text-muted-foreground">· {formatDateTime(new Date(r.createdAt))} · โดย {r.by}</span></p>
                   <p className="text-base font-semibold tabular-nums text-primary">คืนเงิน {formatMoney(r.refundTotal)}</p>
                 </div>
                 <ul className="mt-2 space-y-0.5">
                   {r.items.map((i) => <li key={i.id} className="flex justify-between"><span>{i.name} × {i.quantity}{i.restock ? "" : " (ของเสีย ไม่คืนสต็อก)"}</span><span className="tabular-nums">{formatMoney(i.refund)}</span></li>)}
                 </ul>
-                <p className="mt-2 text-xs text-muted-foreground">เหตุผล: {r.reason}{r.refundNote ? ` · ${r.refundNote}` : ""}{r.pointsReversed > 0 ? ` · หักแต้ม ${r.pointsReversed}` : ""}</p>
+                <p className="mt-2 text-sm text-muted-foreground">เหตุผล: {r.reason}{r.refundNote ? ` · ${r.refundNote}` : ""}{r.pointsReversed > 0 ? ` · หักแต้ม ${r.pointsReversed}` : ""}</p>
               </div>
             ))}
           </div>
@@ -111,5 +112,5 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
 }
 
 function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
-  return <div className="flex justify-between gap-3"><span className="text-muted-foreground">{k}</span><span className={mono ? "font-mono text-xs" : "text-right"}>{v}</span></div>;
+  return <div className="flex justify-between gap-3"><span className="text-muted-foreground">{k}</span><span className={mono ? "font-mono text-sm" : "text-right"}>{v}</span></div>;
 }

@@ -34,7 +34,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="รายงานยอดขาย" description={`ช่วงวันที่ ${range.from} ถึง ${range.to} (เวลาไทย)`} />
+      <PageHeader eyebrow="Reports" title="รายงานยอดขาย" description={`ช่วงวันที่ ${range.from} ถึง ${range.to} (เวลาไทย)`} />
       <form className="mb-4 flex flex-wrap items-center gap-2" role="search">
         <Input name="from" type="date" defaultValue={range.from} aria-label="ตั้งแต่วันที่" className="w-44" />
         <span className="text-sm text-muted-foreground">ถึง</span>
@@ -49,7 +49,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </a>
         </span>
       </form>
-      {notice && <p role="status" className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{notice}</p>}
+      {notice && <p role="status" className="mb-4 rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning">{notice}</p>}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="ยอดขายสุทธิ" value={formatMoney(tot.net)} icon={Wallet} hint={`ยอดขาย ${formatMoney(tot.gross)} − เงินคืน ${formatMoney(tot.refunds)}`} />
@@ -118,7 +118,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                     {top.map((p, i) => (
                       <TableRow key={p.productId}>
                         <TableCell>{i + 1}</TableCell>
-                        <TableCell><div className="max-w-40 truncate font-medium" title={p.name}>{p.name}</div><div className="font-mono text-xs text-muted-foreground">{p.sku}</div></TableCell>
+                        <TableCell><div className="max-w-40 truncate font-medium" title={p.name}>{p.name}</div><div className="font-mono text-sm text-muted-foreground">{p.sku}</div></TableCell>
                         <TableCell className="text-right tabular-nums">{p.units}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoney(p.revenue)}</TableCell>
                       </TableRow>
@@ -133,7 +133,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
       <div className="mt-4">
         <InsightList insights={bi.insights} title="Smart BI — การวิเคราะห์ธุรกิจ" />
-        <p className="mt-2 text-xs text-muted-foreground">การวิเคราะห์ใช้ข้อมูลล่าสุดเสมอ (7/14 วันย้อนหลังจากวันนี้) ไม่ขึ้นกับช่วงวันที่ที่เลือกด้านบน</p>
+        <p className="mt-2 text-sm text-muted-foreground">การวิเคราะห์ใช้ข้อมูลล่าสุดเสมอ (7/14 วันย้อนหลังจากวันนี้) ไม่ขึ้นกับช่วงวันที่ที่เลือกด้านบน</p>
       </div>
     </>
   );

@@ -40,7 +40,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="บันทึกการใช้งาน (Audit Log)" description={`เหตุการณ์สำคัญที่ระบบบันทึกไว้ ${data.total.toLocaleString("th-TH")} รายการ — อ่านอย่างเดียว แก้ไขหรือลบไม่ได้`} />
+      <PageHeader eyebrow="Audit log" title="บันทึกการใช้งาน (Audit Log)" description={`เหตุการณ์สำคัญที่ระบบบันทึกไว้ ${data.total.toLocaleString("th-TH")} รายการ — อ่านอย่างเดียว แก้ไขหรือลบไม่ได้`} />
       <form className="mb-4 flex flex-wrap items-center gap-2" role="search">
         <select name="action" defaultValue={action ?? ""} aria-label="เหตุการณ์" className={selectClass}>
           <option value="">ทุกเหตุการณ์</option>
@@ -65,11 +65,11 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
             <TableBody>
               {data.rows.map((r) => (
                 <TableRow key={r.id} className="align-top">
-                  <TableCell className="whitespace-nowrap text-xs">{formatDateTime(new Date(r.createdAt))}</TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">{formatDateTime(new Date(r.createdAt))}</TableCell>
                   <TableCell>{r.user ?? <span className="text-muted-foreground">ไม่ระบุ/ระบบ</span>}</TableCell>
                   <TableCell><Badge variant={r.action === "LOGIN_FAILED" ? "destructive" : "outline"}>{auditLabel(r.action)}</Badge></TableCell>
-                  <TableCell className="text-xs"><span className="text-muted-foreground">{r.entity}</span>{r.entityId && <div className="font-mono">{r.entityId.slice(0, 8)}…</div>}</TableCell>
-                  <TableCell className="max-w-md text-xs">
+                  <TableCell className="text-sm"><span className="text-muted-foreground">{r.entity}</span>{r.entityId && <div className="font-mono">{r.entityId.slice(0, 8)}…</div>}</TableCell>
+                  <TableCell className="max-w-md text-sm">
                     {r.before || r.after ? (
                       <details>
                         <summary className="cursor-pointer text-primary">ดูรายละเอียด</summary>

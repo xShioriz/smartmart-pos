@@ -18,7 +18,7 @@ export default async function CategoriesPage({ searchParams }: { searchParams: P
   const links = sortLinks(KEYS, sort, (s) => `/categories?${new URLSearchParams({ ...(q?.trim() ? { q: q.trim() } : {}), sort: s.key, dir: s.dir })}`, ["count"]);
   return (
     <>
-      <PageHeader title="หมวดหมู่สินค้า" description="จัดกลุ่มสินค้าเพื่อค้นหาและทำโปรโมชั่น" />
+      <PageHeader eyebrow="Categories" title="หมวดหมู่สินค้า" description="จัดกลุ่มสินค้าเพื่อค้นหาและทำโปรโมชั่น" />
       <form className="mb-4 flex max-w-sm gap-2" role="search">
         <input type="hidden" name="sort" value={sort.key} />
         <input type="hidden" name="dir" value={sort.dir} />

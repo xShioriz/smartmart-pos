@@ -19,7 +19,7 @@ export default async function PromotionsPage({ searchParams }: { searchParams: P
   const links = sortLinks(KEYS, sort, (s) => `/promotions?sort=${s.key}&dir=${s.dir}`, ["discount", "min", "period"]);
   return (
     <>
-      <PageHeader title="โปรโมชั่น" description="ส่วนลดรายสินค้า/หมวดหมู่ และส่วนลดทั้งบิล — ระบบเลือกอันที่ลดมากที่สุดอันเดียวต่อรายการ (ไม่ซ้อนกัน)" />
+      <PageHeader eyebrow="Promotions" title="โปรโมชั่น" description="ส่วนลดรายสินค้า/หมวดหมู่ และส่วนลดทั้งบิล — ระบบเลือกอันที่ลดมากที่สุดอันเดียวต่อรายการ (ไม่ซ้อนกัน)" />
       <PromotionsManager items={items} sortLinks={links} products={data.products} categories={data.categories} />
     </>
   );
