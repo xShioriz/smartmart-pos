@@ -13,10 +13,10 @@ export function SortHead({ label, href, active, right, className }: { label: str
         href={href}
         scroll={false}
         title={`เรียงตาม${label}`}
-        className={cn("inline-flex items-center gap-1 rounded hover:text-primary", right && "flex-row-reverse", active ? "text-primary" : "")}
+        className={cn("inline-flex min-h-11 items-center gap-1 rounded text-navy hover:text-primary", right && "flex-row-reverse")}
       >
         {label}
-        <Icon className={cn("size-3.5 shrink-0", !active && "opacity-40")} aria-hidden />
+        <Icon className={cn("size-4 shrink-0", active ? "text-blue" : "text-muted-foreground opacity-70")} aria-hidden strokeWidth={1.8} />
       </Link>
     </TableHead>
   );

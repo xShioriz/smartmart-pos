@@ -76,6 +76,12 @@
   --radius-4xl: 999px;
 
   --shadow-float: 0 14px 30px rgba(11, 31, 75, 0.14);
+
+  /* สเกลขนาด DESIGN.md §2: หัวข้อหน้า 28 (text-page), ตัวเลขเด่น/ฮีโร่ 44 (text-display) */
+  --text-page: 1.75rem;
+  --text-page--line-height: 1.25;
+  --text-display: 2.75rem;
+  --text-display--line-height: 1.15;
 }
 
 :root {
