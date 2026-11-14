@@ -16,10 +16,10 @@ import { EmptyState } from "@/components/shared/empty-state";
 import type { ActionResult } from "@/lib/result";
 import { createUserAction, resetPasswordAction, setUserActiveAction, updateUserAction } from "./actions";
 
-type Role = "ADMIN" | "CASHIER";
+type Role = "ADMIN" | "OWNER" | "CASHIER";
 type UserRow = { id: string; email: string; name: string; role: Role; isActive: boolean; createdAt: string };
 
-const ROLE_LABEL: Record<Role, string> = { ADMIN: "ผู้ดูแลระบบ", CASHIER: "แคชเชียร์" };
+const ROLE_LABEL: Record<Role, string> = { ADMIN: "ผู้ดูแลระบบ", OWNER: "เจ้าของร้าน", CASHIER: "แคชเชียร์" };
 const selectClass =
   "h-11 w-full rounded-lg border border-input bg-card px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
@@ -118,6 +118,7 @@ export function UsersManager({ users, meId, sortLinks }: { users: UserRow[]; meI
                 <Label htmlFor="role">สิทธิ์</Label>
                 <select id="role" name="role" className={selectClass} defaultValue={dlg.kind === "edit" ? dlg.user.role : "CASHIER"} disabled={dlg.kind === "edit" && dlg.user.id === meId}>
                   <option value="CASHIER">แคชเชียร์</option>
+                  <option value="OWNER">เจ้าของร้าน (ยกเลิกบิลได้)</option>
                   <option value="ADMIN">ผู้ดูแลระบบ</option>
                 </select>
                 {dlg.kind === "edit" && dlg.user.id === meId && <input type="hidden" name="role" value={dlg.user.role} />}

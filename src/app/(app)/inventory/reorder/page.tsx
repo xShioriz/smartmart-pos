@@ -9,7 +9,7 @@ import { requirePage } from "@/server/auth/guard";
 import { loadReorderList } from "@/server/services/bi";
 
 export default async function ReorderPage() {
-  await requirePage(["ADMIN"]);
+  await requirePage(["ADMIN", "OWNER"]);
   const list = await loadReorderList();
   const total = list.reduce((a, r) => a + Number(r.estCost), 0);
 

@@ -18,7 +18,7 @@ const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", PROMP
 const STATUS_LABEL: Record<string, string> = { PENDING_PAYMENT: "รอชำระเงิน", CANCELLED: "ยกเลิก", COMPLETED: "สำเร็จ", PARTIALLY_RETURNED: "คืนบางส่วน", FULLY_RETURNED: "คืนทั้งบิล", PAID_NEEDS_REVIEW: "จ่ายแล้ว — ต้องตรวจสอบ" };
 
 export default async function SalesPage({ searchParams }: { searchParams: Promise<{ q?: string; date?: string; page?: string; view?: string; sort?: string; dir?: string }> }) {
-  const user = await requirePage(["ADMIN", "CASHIER"]);
+  const user = await requirePage(["ADMIN", "OWNER", "CASHIER"]);
   const sp = await searchParams;
   const q = sp.q?.trim().slice(0, 50) || undefined;
   const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).safeParse(sp.date).data;
@@ -42,7 +42,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader eyebrow="Sales history" title="ประวัติการขาย" description={user.role === "ADMIN" ? `ทั้งหมด ${data.total.toLocaleString("th-TH")} บิล` : `บิลของคุณ ${data.total.toLocaleString("th-TH")} บิล`} />
+      <PageHeader eyebrow="Sales history" title="ประวัติการขาย" description={user.role !== "CASHIER" ? `ทั้งหมด ${data.total.toLocaleString("th-TH")} บิล` : `บิลของคุณ ${data.total.toLocaleString("th-TH")} บิล`} />
       <form className="mb-4 flex flex-wrap items-center gap-2" role="search">
         <input type="hidden" name="sort" value={sort.key} />
         <input type="hidden" name="dir" value={sort.dir} />
@@ -80,7 +80,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
                   <TableCell><Badge variant={s.status === "COMPLETED" ? "outline" : s.status === "PAID_NEEDS_REVIEW" ? "destructive" : "secondary"}>{STATUS_LABEL[s.status] ?? s.status}</Badge></TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-3 text-sm">
-                      <Link href={`/sales/${s.id}`} className="text-primary hover:underline">รายละเอียด{user.role === "ADMIN" && (s.status === "COMPLETED" || s.status === "PARTIALLY_RETURNED") ? " / คืนสินค้า" : ""}</Link>
+                      <Link href={`/sales/${s.id}`} className="text-primary hover:underline">รายละเอียด{user.role !== "CASHIER" && (s.status === "COMPLETED" || s.status === "PARTIALLY_RETURNED") ? " / คืนสินค้า" : ""}</Link>
                       {s.receiptNo && <Link href={`/receipt/${s.id}`} className="text-muted-foreground hover:underline">ใบเสร็จ</Link>}
                     </div>
                   </TableCell>

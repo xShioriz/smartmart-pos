@@ -14,7 +14,7 @@ import { getMemberDetail } from "@/server/services/members";
 const TYPE: Record<string, string> = { EARN: "ได้รับแต้ม", REDEEM: "ใช้แต้ม", RETURN_ADJUST: "ปรับจากการคืนสินค้า" };
 
 export default async function MemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requirePage(["ADMIN"]);
+  await requirePage(["ADMIN", "OWNER"]);
   const id = z.string().uuid().safeParse((await params).id).data;
   if (!id) notFound();
   const data = await getMemberDetail(id);

@@ -15,7 +15,7 @@ const selectClass = "h-11 rounded-lg border border-input bg-card px-3 text-base 
 type SP = { q?: string; category?: string; status?: string; page?: string; sort?: string; dir?: string };
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SP> }) {
-  await requirePage(["ADMIN"]);
+  await requirePage(["ADMIN", "OWNER"]);
   const sp = await searchParams;
   const q = sp.q?.trim().slice(0, 100) || undefined;
   const categoryId = z.string().uuid().safeParse(sp.category).data;

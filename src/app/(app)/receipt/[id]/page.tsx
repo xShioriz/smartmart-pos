@@ -13,7 +13,7 @@ import { PrintButton } from "./print-button";
 const METHOD_LABEL: Record<string, string> = { CASH: "เงินสด", PROMPTPAY: "PromptPay QR" };
 
 export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requirePage(["ADMIN", "CASHIER"]);
+  const user = await requirePage(["ADMIN", "OWNER", "CASHIER"]);
   const id = z.string().uuid().safeParse((await params).id).data;
   if (!id) notFound();
   const data = await getReceipt(id, user);
@@ -26,7 +26,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 print:hidden">
         <Link href="/sales" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> ประวัติการขาย</Link>
         <div className="flex gap-2">
-          <Link href={`/sales/${sale.id}`}><Button variant="outline">{user.role === "ADMIN" && (sale.status === "COMPLETED" || sale.status === "PARTIALLY_RETURNED") ? "รายละเอียด / คืนสินค้า" : "รายละเอียดบิล"}</Button></Link>
+          <Link href={`/sales/${sale.id}`}><Button variant="outline">{user.role !== "CASHIER" && (sale.status === "COMPLETED" || sale.status === "PARTIALLY_RETURNED") ? "รายละเอียด / คืนสินค้า" : "รายละเอียดบิล"}</Button></Link>
           <PrintButton />
           <Link href="/pos"><Button><ShoppingCart /> ขายรายการใหม่</Button></Link>
         </div>

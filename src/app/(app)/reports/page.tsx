@@ -16,7 +16,7 @@ import { daysBetween, lastNDays, salesReport, topProducts, type DateRange } from
 const MAX_DAYS = 366;
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
-  await requirePage(["ADMIN"]);
+  await requirePage(["ADMIN", "OWNER"]);
   const sp = await searchParams;
   const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
   const f = date.safeParse(sp.from).data, t = date.safeParse(sp.to).data;

@@ -245,7 +245,7 @@ export async function reconcilePayment(paymentId: string, source: "webhook" | "r
 async function loadOwned(actor: CurrentUser, paymentId: string) {
   const p = await db.payment.findUnique({ where: { id: paymentId }, include: { sale: { select: { cashierId: true } } } });
   if (!p || p.method !== "PROMPTPAY") throw new BusinessError("ไม่พบรายการชำระเงิน");
-  if (actor.role !== "ADMIN" && p.sale.cashierId !== actor.id) throw new BusinessError("ไม่พบรายการชำระเงิน");
+  if (actor.role === "CASHIER" && p.sale.cashierId !== actor.id) throw new BusinessError("ไม่พบรายการชำระเงิน");
   return p;
 }
 

@@ -8,7 +8,7 @@ import { listCategories } from "@/server/services/categories";
 import { CategoriesManager } from "./categories-manager";
 
 export default async function CategoriesPage({ searchParams }: { searchParams: Promise<{ q?: string; sort?: string; dir?: string }> }) {
-  await requirePage(["ADMIN"]);
+  await requirePage(["ADMIN", "OWNER"]);
   const sp = await searchParams;
   const q = sp.q;
   const KEYS = ["name", "description", "count"] as const;

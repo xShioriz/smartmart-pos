@@ -10,7 +10,7 @@ import { MEMBER_SORT_KEYS, listMembers, type MemberSortKey } from "@/server/serv
 import { MembersManager } from "./members-manager";
 
 export default async function MembersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; sort?: string; dir?: string }> }) {
-  await requirePage(["ADMIN"]);
+  await requirePage(["ADMIN", "OWNER"]);
   const sp = await searchParams;
   const q = sp.q?.trim().slice(0, 60) || undefined;
   const page = z.coerce.number().int().min(1).catch(1).parse(sp.page);

@@ -17,7 +17,7 @@ export async function authenticate(email: string, password: string) {
   return { id: user.id, role: user.role };
 }
 
-export type LoginOutcome = { ok: true; user: { id: string; role: "ADMIN" | "CASHIER" } } | { ok: false; error: string; locked: boolean };
+export type LoginOutcome = { ok: true; user: { id: string; role: "ADMIN" | "OWNER" | "CASHIER" } } | { ok: false; error: string; locked: boolean };
 
 export const INVALID_LOGIN = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
 

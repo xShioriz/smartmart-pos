@@ -29,7 +29,7 @@ function qs(params: Record<string, string | undefined>) {
 }
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<SP> }) {
-  const user = await requirePage(["ADMIN", "CASHIER"]);
+  const user = await requirePage(["ADMIN", "OWNER", "CASHIER"]);
   const isAdmin = user.role === "ADMIN";
   const sp = await searchParams;
   if (sp.tab === "alerts") redirect("/notifications"); // ลิงก์เก่า: แจ้งเตือนย้ายไปหน้าเฉพาะแล้ว

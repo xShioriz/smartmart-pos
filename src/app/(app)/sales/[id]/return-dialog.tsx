@@ -45,6 +45,8 @@ export function ReturnDialog({ saleId, items, isQr }: { saleId: string; items: I
   }, [sig, open, saleId]);
 
   function reset() { setQty({}); setRestock({}); setReason(""); setNote(""); setPreview(null); setPreviewError(null); setError(null); key.current = crypto.randomUUID(); }
+  // ยกเลิกทั้งบิล = คืนทุกรายการที่เหลือ เข้าสต็อกล็อตเดิม (ใช้ระบบคืนสินค้าเดิม ไม่มีสถานะใหม่)
+  function fillAll() { setQty(Object.fromEntries(items.filter((i) => i.quantity - i.returnedQty > 0).map((i) => [i.id, String(i.quantity - i.returnedQty)]))); setRestock({}); }
   function openDialog() { reset(); setOpen(true); }
 
   function submit() {
@@ -63,13 +65,14 @@ export function ReturnDialog({ saleId, items, isQr }: { saleId: string; items: I
 
   return (
     <>
-      <Button variant="outline" onClick={openDialog}><Undo2 /> คืนสินค้า</Button>
+      <Button variant="outline" onClick={openDialog}><Undo2 /> คืนสินค้า / ยกเลิกบิล</Button>
       <Dialog open={open} onOpenChange={(o) => { if (!pending) setOpen(o); }}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>คืนสินค้า / คืนเงิน</DialogTitle>
             <DialogDescription>เงินคืนคิดจากยอดที่ลูกค้าจ่ายจริงของแต่ละรายการ (หลังส่วนลด) · สินค้าที่คืนเข้าสต็อกจะกลับไปยังล็อตเดิม</DialogDescription>
           </DialogHeader>
+          <div><Button type="button" variant="outline" size="sm" onClick={fillAll}>ยกเลิกทั้งบิล (คืนทุกรายการที่เหลือ)</Button></div>
           <div className="max-h-72 space-y-2 overflow-y-auto">
             {items.map((i) => {
               const left = i.quantity - i.returnedQty;

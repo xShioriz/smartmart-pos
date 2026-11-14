@@ -41,5 +41,5 @@ export async function requireAction(roles?: Role[]): Promise<CurrentUser> {
 }
 
 export function homePathFor(role: Role): string {
-  return role === "ADMIN" ? "/dashboard" : "/pos";
+  return role === "CASHIER" ? "/pos" : "/dashboard";
 }

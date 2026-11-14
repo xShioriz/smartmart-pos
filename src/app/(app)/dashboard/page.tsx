@@ -15,7 +15,7 @@ import { loadDashboard, resolveDashboardRange } from "@/server/services/dashboar
 const card = "rounded-xl border bg-card p-4 sm:p-5";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ range?: string; from?: string; to?: string }> }) {
-  const user = await requirePage(["ADMIN"]);
+  const user = await requirePage(["ADMIN", "OWNER"]);
   const sp = await searchParams;
   const resolved = resolveDashboardRange(sp, todayBangkokKey());
   const d = await loadDashboard(resolved.range);

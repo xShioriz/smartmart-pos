@@ -7,7 +7,7 @@ import { describePaymentConfig } from "@/server/payments/config";
 import { PosTerminal } from "./pos-terminal";
 
 export default async function PosPage() {
-  await requirePage(["ADMIN", "CASHIER"]);
+  await requirePage(["ADMIN", "OWNER", "CASHIER"]);
   const products = await listPosProducts();
   return (
     <>

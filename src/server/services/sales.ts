@@ -19,7 +19,7 @@ export async function getReceipt(id: string, viewer: CurrentUser) {
     include: { items: { orderBy: { nameSnapshot: "asc" } }, cashier: { select: { name: true } }, payment: true, member: { select: { code: true, name: true } }, pointTransactions: { where: { type: "EARN" }, select: { balanceAfter: true } } },
   });
   if (!sale || !sale.receiptNo) return null;
-  if (viewer.role !== "ADMIN" && sale.cashierId !== viewer.id) return null;
+  if (viewer.role === "CASHIER" && sale.cashierId !== viewer.id) return null;
   const store = await getStoreInfo();
   return {
     store,
@@ -56,7 +56,7 @@ export async function listSales(f: SalesFilter, viewer: CurrentUser) {
   const q = f.q?.trim().slice(0, 50);
   const where: Prisma.SaleWhereInput = {
     ...(f.view === "review" ? { status: "PAID_NEEDS_REVIEW" as const } : f.view === "unfinished" && viewer.role === "ADMIN" ? { status: { in: ["PENDING_PAYMENT", "CANCELLED"] as ("PENDING_PAYMENT" | "CANCELLED")[] } } : { OR: [{ receiptNo: { not: null } }, { status: "PAID_NEEDS_REVIEW" as const }] }),
-    ...(viewer.role === "ADMIN" ? {} : { cashierId: viewer.id }),
+    ...(viewer.role === "CASHIER" ? { cashierId: viewer.id } : {}),
     ...(q && { receiptNo: { contains: q, mode: "insensitive" as const } }),
     ...(f.date && (() => { const r = bangkokDayRange(f.date); return { createdAt: { gte: r.start, lt: r.end } }; })()),
   };
@@ -84,7 +84,7 @@ export async function getSaleDetail(id: string, viewer: CurrentUser) {
     include: { items: { orderBy: { nameSnapshot: "asc" } }, cashier: { select: { name: true } }, payment: true, member: { select: { id: true, code: true, name: true } } },
   });
   if (!sale) return null;
-  if (viewer.role !== "ADMIN" && sale.cashierId !== viewer.id) return null;
+  if (viewer.role === "CASHIER" && sale.cashierId !== viewer.id) return null;
   const pay = sale.payment;
   const returns = await listReturns(sale.id);
   return {
@@ -93,7 +93,7 @@ export async function getSaleDetail(id: string, viewer: CurrentUser) {
     amountPaid: sale.amountPaid.toFixed(2), change: sale.changeAmount.toFixed(2),
     billDiscount: sale.billDiscount.toFixed(2), billPromotionName: sale.billPromotionName, pointsEarned: sale.pointsEarned,
     member: sale.member,
-    canReturn: viewer.role === "ADMIN" && (sale.status === "COMPLETED" || sale.status === "PARTIALLY_RETURNED"),
+    canReturn: viewer.role !== "CASHIER" && (sale.status === "COMPLETED" || sale.status === "PARTIALLY_RETURNED"),
     isQr: sale.paymentMethod === "PROMPTPAY",
     returns,
     payment: pay && {

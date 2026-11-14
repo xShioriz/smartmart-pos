@@ -8,7 +8,7 @@ import * as members from "@/server/services/members";
 
 export async function createMemberAction(input: unknown) {
   return runAction(async () => {
-    const actor = await requireAction(["ADMIN"]);
+    const actor = await requireAction(["ADMIN", "OWNER"]);
     const r = await members.createMember(actor, createMemberSchema.parse(input));
     revalidatePath("/members");
     return { code: r.code };
@@ -17,7 +17,7 @@ export async function createMemberAction(input: unknown) {
 
 export async function updateMemberAction(input: unknown) {
   return runAction(async () => {
-    const actor = await requireAction(["ADMIN"]);
+    const actor = await requireAction(["ADMIN", "OWNER"]);
     await members.updateMember(actor, updateMemberSchema.parse(input));
     revalidatePath("/members", "layout");
   });
@@ -25,7 +25,7 @@ export async function updateMemberAction(input: unknown) {
 
 export async function setMemberActiveAction(input: unknown) {
   return runAction(async () => {
-    const actor = await requireAction(["ADMIN"]);
+    const actor = await requireAction(["ADMIN", "OWNER"]);
     await members.setMemberActive(actor, setMemberActiveSchema.parse(input));
     revalidatePath("/members", "layout");
   });

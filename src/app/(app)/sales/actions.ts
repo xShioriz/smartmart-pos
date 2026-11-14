@@ -19,17 +19,17 @@ export async function resolveReviewAction(input: unknown) {
   });
 }
 
-// คืนสินค้า = ADMIN เท่านั้น (เงินออก + กระทบสต็อก/แต้ม) — ตรวจฝั่งเซิร์ฟเวอร์ทุกครั้ง
+// คืนสินค้า/ยกเลิกบิล = ADMIN หรือ OWNER (เงินออก + กระทบสต็อก/แต้ม) แคชเชียร์ทำไม่ได้ — ตรวจฝั่งเซิร์ฟเวอร์ทุกครั้ง
 export async function previewReturnAction(input: unknown) {
   return runAction(async () => {
-    await requireAction(["ADMIN"]);
+    await requireAction(["ADMIN", "OWNER"]);
     return previewReturn(previewReturnSchema.parse(input));
   });
 }
 
 export async function returnSaleAction(input: unknown) {
   return runAction(async () => {
-    const actor = await requireAction(["ADMIN"]);
+    const actor = await requireAction(["ADMIN", "OWNER"]);
     const r = await returnSale(actor, returnSaleSchema.parse(input));
     if (!r.replayed) {
       after(async () => { try { await syncNotifications(); } catch (e) { console.error("[notifications sync]", e); } });

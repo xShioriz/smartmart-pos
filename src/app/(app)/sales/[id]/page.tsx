@@ -20,7 +20,7 @@ const PAY_STATUS: Record<string, string> = { PENDING: "รอชำระ", PAID
 const METHOD: Record<string, string> = { CASH: "เงินสด", PROMPTPAY: "PromptPay QR" };
 
 export default async function SaleDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requirePage(["ADMIN", "CASHIER"]);
+  const user = await requirePage(["ADMIN", "OWNER", "CASHIER"]);
   const id = z.string().uuid().safeParse((await params).id).data;
   if (!id) notFound();
   const sale = await getSaleDetail(id, user);

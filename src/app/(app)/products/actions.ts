@@ -8,7 +8,7 @@ import * as products from "@/server/services/products";
 
 export async function createProductAction(input: unknown) {
   return runAction(async () => {
-    const actor = await requireAction(["ADMIN"]);
+    const actor = await requireAction(["ADMIN", "OWNER"]);
     await products.createProduct(actor, createProductSchema.parse(input));
     revalidatePath("/products");
   });
@@ -16,7 +16,7 @@ export async function createProductAction(input: unknown) {
 
 export async function updateProductAction(input: unknown) {
   return runAction(async () => {
-    const actor = await requireAction(["ADMIN"]);
+    const actor = await requireAction(["ADMIN", "OWNER"]);
     await products.updateProduct(actor, updateProductSchema.parse(input));
     revalidatePath("/products");
   });
@@ -24,7 +24,7 @@ export async function updateProductAction(input: unknown) {
 
 export async function setProductActiveAction(input: unknown) {
   return runAction(async () => {
-    const actor = await requireAction(["ADMIN"]);
+    const actor = await requireAction(["ADMIN", "OWNER"]);
     await products.setProductActive(actor, setProductActiveSchema.parse(input));
     revalidatePath("/products");
   });

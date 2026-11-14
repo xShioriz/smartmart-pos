@@ -14,7 +14,7 @@ import { StockManager } from "./stock-manager";
 const MOVEMENT_LABEL: Record<string, string> = { INITIAL: "ยอดยกมา", RESTOCK: "รับเข้า", SALE: "ขาย", ADJUSTMENT: "ปรับยอด", RETURN: "คืนสินค้า" };
 
 export default async function ProductStockPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requirePage(["ADMIN", "CASHIER"]);
+  const user = await requirePage(["ADMIN", "OWNER", "CASHIER"]);
   const id = z.string().uuid().safeParse((await params).id).data;
   if (!id) notFound();
   const isAdmin = user.role === "ADMIN";

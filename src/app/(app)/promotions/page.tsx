@@ -8,7 +8,7 @@ const KEYS = ["name", "scope", "target", "discount", "min", "period", "status"] 
 const STATUS_RANK: Record<string, number> = { ACTIVE: 0, SCHEDULED: 1, EXPIRED: 2, DISABLED: 3 };
 
 export default async function PromotionsPage({ searchParams }: { searchParams: Promise<{ sort?: string; dir?: string }> }) {
-  await requirePage(["ADMIN"]);
+  await requirePage(["ADMIN", "OWNER"]);
   const sp = await searchParams;
   const sort = parseSort(KEYS, sp, { key: "status", dir: "asc" });
   const data = await listPromotions();

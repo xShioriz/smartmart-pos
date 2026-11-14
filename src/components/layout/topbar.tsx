@@ -20,7 +20,7 @@ export function Topbar({ name, role, unread }: { name: string; role: Role; unrea
           </Link>
         )}
         <p className="hidden max-w-40 truncate text-sm font-semibold sm:block">{name}</p>
-        <Badge className="hidden sm:inline-flex" variant={role === "ADMIN" ? "default" : "secondary"}>{role === "ADMIN" ? "ผู้ดูแลระบบ" : "แคชเชียร์"}</Badge>
+        <Badge className="hidden sm:inline-flex" variant={role === "ADMIN" ? "default" : "secondary"}>{role === "ADMIN" ? "ผู้ดูแลระบบ" : role === "OWNER" ? "เจ้าของร้าน" : "แคชเชียร์"}</Badge>
         <form action={logoutAction}>
           <Button type="submit" variant="ghost" size="sm" aria-label="ออกจากระบบ" className="bg-white/10 text-white hover:bg-white/20 hover:text-white">
             <LogOut /> <span className="hidden sm:inline">ออกจากระบบ</span>

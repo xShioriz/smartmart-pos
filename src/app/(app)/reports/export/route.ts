@@ -1,4 +1,4 @@
-// ส่งออกรายงานเป็น CSV (ADMIN เท่านั้น) — ใช้ฟังก์ชันรายงานตัวเดียวกับหน้าจอ ตัวเลขจึงตรงกันเสมอ
+// ส่งออกรายงานเป็น CSV (ADMIN หรือ OWNER) — ใช้ฟังก์ชันรายงานตัวเดียวกับหน้าจอ ตัวเลขจึงตรงกันเสมอ
 import { z } from "zod";
 import { AuthError, requireAction } from "@/server/auth/guard";
 import { audit } from "@/server/audit";
@@ -22,7 +22,7 @@ const bad = (msg: string, status = 400) => new Response(msg, { status, headers: 
 export async function GET(req: Request) {
   let user;
   try {
-    user = await requireAction(["ADMIN"]);
+    user = await requireAction(["ADMIN", "OWNER"]);
   } catch (e) {
     if (e instanceof AuthError) return bad(e.message, e.code === "UNAUTHENTICATED" ? 401 : 403);
     throw e;

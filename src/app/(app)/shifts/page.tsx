@@ -16,7 +16,7 @@ import { CloseShiftForm, OpenShiftForm } from "./shift-forms";
 const KEYS = ["no", "opened", "closed", "opening", "expected", "counted", "diff"] as const;
 
 export default async function ShiftsPage({ searchParams }: { searchParams: Promise<{ sort?: string; dir?: string }> }) {
-  const user = await requirePage(["ADMIN", "CASHIER"]);
+  const user = await requirePage(["ADMIN", "OWNER", "CASHIER"]);
   const sp = await searchParams;
   const sort = parseSort(KEYS, sp, { key: "no", dir: "desc" });
   const open = await getOpenShift();

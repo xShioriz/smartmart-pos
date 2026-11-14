@@ -24,6 +24,7 @@ const cashier = await db.user.findUniqueOrThrow({ where: { email: "cashier@smart
 const manifest = JSON.parse(fs.readFileSync(".next/server/server-reference-manifest.json", "utf8")).node;
 const actionId = (name) => Object.entries(manifest).find(([, v]) => v.exportedName === name)[0];
 
+let ownerUser = null;
 const results = [];
 const check = (name, ok, extra = "") => {
   results.push(ok);
@@ -180,6 +181,28 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
     check('ADMIN เห็นปุ่มคืนสินค้าและประวัติการคืนในรายละเอียดบิล', detailAdmin.includes('คืนสินค้า') && detailAdmin.includes('RT-'));
     check('CASHIER ดูรายละเอียดบิลของตนเองได้ แต่ไม่เห็นปุ่มคืนสินค้า', !(await body('/sales/' + cashierSale, ct)).includes('คืนสินค้า / คืนเงิน'));
     check('CASHIER ดูรายละเอียดบิลของ ADMIN ไม่ได้ (404)', (await body('/sales/' + adminSale, ct)).includes('NEXT_HTTP_ERROR_FALLBACK;404'));
+
+    // OWNER (เจ้าของร้าน): เห็นทุกบิล + คืน/ยกเลิกบิลได้ แต่ไม่มีสิทธิ์งานผู้ดูแลระบบ
+    ownerUser = await db.user.create({ data: { email: 'zzowner.guard@smartmart.local', name: 'ZZ Owner', role: 'OWNER', passwordHash: 'x' } });
+    const ot = await mint(ownerUser.id);
+    check('OWNER เข้า /pos ได้', (await get('/pos', ot)).status === 200);
+    for (const p of ['/users', '/settings', '/audit', '/notifications']) check('OWNER เข้า ' + p + ' → redirect ไม่รั่วข้อมูล', (await body(p, ot)).includes('NEXT_REDIRECT'));
+    for (const p of ['/dashboard', '/products', '/categories', '/promotions', '/members', '/reports', '/inventory/reorder']) check('OWNER เข้า ' + p + ' ได้', (await get(p, ot)).status === 200);
+    a = await act('createCategoryAction', { name: 'ZZOWNERCAT', description: '' }, ot);
+    check('OWNER createCategoryAction ได้', a.text.includes('"ok":true'));
+    await db.category.deleteMany({ where: { name: 'ZZOWNERCAT' } });
+    a = await act('receiveStockAction', { productId: zero, qty: 1, costPrice: '1', expiryDate: '', batchNo: '', note: '' }, ot);
+    check('OWNER receiveStockAction → ปฏิเสธ (รับสต็อกยังเป็น ADMIN)', a.text.includes('ไม่มีสิทธิ์'));
+    a = await act('createUserAction', { ...newUser, email: 'zzowner.hack@smartmart.local', role: 'ADMIN' }, ot);
+    check('OWNER createUserAction → ปฏิเสธ', a.text.includes('ไม่มีสิทธิ์') && !(await db.user.findUnique({ where: { email: 'zzowner.hack@smartmart.local' } })));
+    a = await act('resolveReviewAction', { saleId: zero, action: 'FULFILL', note: 'x' }, ot);
+    check('OWNER resolveReviewAction → ปฏิเสธ (คงเป็น ADMIN เท่านั้น)', a.text.includes('ไม่มีสิทธิ์'));
+    const listO = await body('/sales?q=SM-', ot);
+    check('/sales: OWNER เห็นบิลของแคชเชียร์และของ ADMIN', listO.includes(cashierReceiptNo) && listO.includes(adminReceiptNo));
+    check('OWNER เห็นปุ่มยกเลิกบิลในรายละเอียดบิลของแคชเชียร์', (await body('/sales/' + cashierSale, ot)).includes('ยกเลิกบิล'));
+    const ownerItem = await db.saleItem.findFirstOrThrow({ where: { saleId: cashierSale } });
+    a = await act('returnSaleAction', { saleId: cashierSale, items: [{ saleItemId: ownerItem.id, quantity: ownerItem.quantity, restock: true }], reason: 'ยกเลิกบิล (ทดสอบ OWNER)', refundNote: '', idempotencyKey: uuid() }, ot);
+    check('OWNER ยกเลิกทั้งบิลได้: สต็อกกลับ, บิลเป็นคืนทั้งบิล', a.text.includes('"ok":true') && (await stockNow()) === 9 && (await db.sale.findUniqueOrThrow({ where: { id: cashierSale } })).status === 'FULLY_RETURNED', a.text.slice(0, 160));
   } finally {
     const saleIds = (await db.saleItem.findMany({ where: { productId: prod.id }, select: { saleId: true } })).map((s) => s.saleId);
     await db.notification.deleteMany({ where: { productId: prod.id } });
@@ -190,6 +213,10 @@ check('id ไม่ใช่ uuid → หน้า 404', (await body('/inventory
     await db.productBatch.deleteMany({ where: { productId: prod.id } });
     await db.product.delete({ where: { id: prod.id } });
     await db.category.delete({ where: { id: cat.id } });
+    if (ownerUser) {
+      await db.auditLog.deleteMany({ where: { userId: ownerUser.id } });
+      await db.user.delete({ where: { id: ownerUser.id } });
+    }
   }
 }
 
