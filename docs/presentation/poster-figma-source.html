@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><title>SmartMart POS Poster</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9e6ff;font-family:'Noto Sans Thai','Prompt',sans-serif;color:#33405F;width:840px}
+.sheet{width:840px;height:1188px;background:#F7F8FC;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.circle{position:absolute;border-radius:50%;background:rgba(255,255,255,0.06)}
+.h{font-family:'Prompt',sans-serif;font-weight:700}
+.logo{display:flex;align-items:center;gap:12px}
+.logo .dot{width:40px;height:40px;border-radius:20px;background:#2563FF;display:flex;align-items:center;justify-content:center}
+.logo .name{font-family:'Prompt',sans-serif;font-weight:700;font-size:20px;letter-spacing:4px}
+.logo .tag{font-family:'Prompt',sans-serif;font-weight:700;font-size:14px;background:#2563FF;color:#fff;border-radius:7px;padding:3px 10px}
+.ph{border:2.5px dashed #7FA2FF;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.tablet{border:8px solid #1E2F66;background:#07173D;border-radius:26px;padding:12px}
+.card{background:#fff;border:1px solid #DCE3F7;border-radius:18px;padding:18px 20px}
+.ico{width:48px;height:48px;border-radius:14px;background:#E9E6FF;display:flex;align-items:center;justify-content:center;flex:none}
+</style></head><body>
+<div class="sheet" id="poster">
+
+  <!-- 1) HEADER -->
+  <div style="height:262px;flex:none;background:linear-gradient(160deg,#0B1F4B 0%,#1E46B8 100%);padding:34px 40px;position:relative;overflow:hidden;color:#fff">
+    <div class="circle" style="width:420px;height:420px;right:-150px;top:-190px"></div>
+    <div class="circle" style="width:240px;height:240px;left:-110px;bottom:-130px"></div>
+    <div class="logo" style="position:relative"><div class="dot"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div class="name" style="color:#fff">SMARTMART</div><div class="tag">POS</div></div>
+    <div class="h" style="font-size:84px;line-height:96px;color:#fff;margin-top:20px;position:relative">SmartMart <span style="color:#7FA2FF">POS</span></div>
+    <div style="font-family:'Prompt',sans-serif;font-weight:600;font-size:30px;line-height:40px;color:#E9E6FF;position:relative">ขายง่าย สต็อกแม่น ร้านเดินหน้า</div>
+    <div style="font-size:16px;line-height:24px;color:#C9C2F5;position:relative;margin-top:2px">ระบบขายหน้าร้านบนเว็บสำหรับร้านสะดวกซื้อ · โปรเจกต์จบการศึกษา</div>
+  </div>
+
+  <!-- 2) HERO MOCKUPS -->
+  <div style="height:210px;flex:none;padding:22px 40px 0;position:relative">
+    <div class="tablet" style="position:absolute;left:40px;top:22px;width:520px;height:200px;background:#0B1F4B"><div class="ph" style="height:100%;border-color:#7FA2FF;color:#E9E6FF"><div style="font-family:'Prompt',sans-serif;font-weight:600;font-size:22px">Dashboard</div><div style="font-size:16px;line-height:24px">กรอบเบราว์เซอร์ — วางภาพหน้าจอจริงทับ</div></div></div>
+    <div class="tablet" style="position:absolute;left:470px;top:58px;width:330px;height:160px;background:#0B1F4B;box-shadow:0 8px 24px rgba(11,31,75,0.25)"><div class="ph" style="height:100%;border-color:#7FA2FF;color:#E9E6FF"><div style="font-family:'Prompt',sans-serif;font-weight:600;font-size:22px">POS</div><div style="font-size:16px;line-height:24px">กรอบแท็บเล็ต — วางภาพหน้าจอ</div></div></div>
+  </div>
+
+  <!-- 3) FOUR HIGHLIGHTS -->
+  <div style="flex:none;padding:14px 40px 0;display:flex;flex-wrap:wrap;gap:14px">
+    <div class="card" style="width:372px;height:104px;display:flex;gap:16px;align-items:flex-start"><div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B1F4B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.7 12.4a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L20 7H6"/></svg></div><div><div class="h" style="font-size:25px;line-height:34px;color:#0B1F4B">เงินสด + PromptPay</div><div style="font-size:16px;line-height:24px">QR ยืนยันการจ่ายจากผู้ให้บริการเท่านั้น</div></div></div>
+    <div class="card" style="width:372px;height:104px;display:flex;gap:16px;align-items:flex-start"><div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B1F4B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div><div><div class="h" style="font-size:25px;line-height:34px;color:#0B1F4B">สต็อกแยกล็อต FEFO</div><div style="font-size:16px;line-height:24px">ตัดของใกล้หมดอายุก่อน พร้อมแจ้งเตือน</div></div></div>
+    <div class="card" style="width:372px;height:104px;display:flex;gap:16px;align-items:flex-start"><div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B1F4B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2"/><path d="M14 10h4M14 14h4"/></svg></div><div><div class="h" style="font-size:25px;line-height:34px;color:#0B1F4B">สมาชิก + โปรโมชั่น</div><div style="font-size:16px;line-height:24px">สะสมแต้ม คำนวณส่วนลดฝั่งเซิร์ฟเวอร์</div></div></div>
+    <div class="card" style="width:372px;height:104px;display:flex;gap:16px;align-items:flex-start"><div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0B1F4B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></div><div><div class="h" style="font-size:25px;line-height:34px;color:#0B1F4B">แดชบอร์ด + รายงาน</div><div style="font-size:16px;line-height:24px">รายการที่ควรสั่งซื้อ ส่งออก CSV ได้</div></div></div>
+  </div>
+
+  <!-- 4) NUMBERS BAND -->
+  <div style="flex:none;margin:16px 40px 0;background:#E9E6FF;border-radius:20px;padding:14px 24px;height:140px;display:flex;gap:20px;align-items:center">
+    <div style="flex:1"><div class="h" style="font-size:54px;line-height:58px;color:#0B1F4B">196</div><div style="font-size:16px;line-height:22px;color:#0B1F4B">เคส ทดสอบอัตโนมัติ</div></div>
+    <div style="flex:1.1"><div class="h" style="font-size:54px;line-height:58px;color:#0B1F4B">170</div><div style="font-size:16px;line-height:22px;color:#0B1F4B">ข้อ ทดสอบสิทธิ์ผ่าน HTTP</div></div>
+    <div style="flex:1.7"><div class="h" style="font-size:54px;line-height:58px;color:#0B1F4B">3</div><div style="font-size:16px;line-height:22px;color:#0B1F4B">บทบาท แคชเชียร์ · เจ้าของร้าน · ผู้ดูแลระบบ</div></div>
+  </div>
+
+  <!-- 5) ARCHITECTURE -->
+  <div style="flex:none;padding:14px 40px 0;display:flex;align-items:center;gap:8px;height:72px">
+    <div class="card" style="flex:1;padding:10px 8px;text-align:center;font-size:15px;line-height:22px;font-weight:600;color:#0B1F4B">เบราว์เซอร์</div>
+    <div class="h" style="color:#2563FF;font-size:22px">→</div>
+    <div class="card" style="flex:1.6;padding:10px 8px;text-align:center;font-size:15px;line-height:22px;font-weight:600;color:#0B1F4B">Next.js<br><span style="font-weight:400;font-size:14px">Server Actions + ตรวจสิทธิ์</span></div>
+    <div class="h" style="color:#2563FF;font-size:22px">→</div>
+    <div class="card" style="flex:1.2;padding:10px 8px;text-align:center;font-size:15px;line-height:22px;font-weight:600;color:#0B1F4B">ชั้น Service<br><span style="font-weight:400;font-size:14px">ตรรกะธุรกิจ</span></div>
+    <div class="h" style="color:#2563FF;font-size:22px">→</div>
+    <div class="card" style="flex:1;padding:10px 8px;text-align:center;font-size:15px;line-height:22px;font-weight:600;color:#0B1F4B">PostgreSQL</div>
+  </div>
+
+  <!-- 6) FOOTER -->
+  <div style="flex:1;margin-top:14px;background:linear-gradient(160deg,#0B1F4B 0%,#12307A 100%);padding:22px 40px 18px;position:relative;overflow:hidden;color:#fff">
+    <div class="circle" style="width:300px;height:300px;right:-100px;bottom:-140px"></div>
+    <div style="display:flex;gap:28px;align-items:flex-start;position:relative">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <div style="border:1.5px dashed rgba(255,255,255,0.45);border-radius:10px;padding:4px 14px"><span style="font-size:15px;line-height:22px;font-weight:600;color:#fff">ผู้พัฒนา</span> <span style="font-size:15px;line-height:22px;color:#C9C2F5">[ชื่อ-นามสกุล]</span></div>
+        <div style="border:1.5px dashed rgba(255,255,255,0.45);border-radius:10px;padding:4px 14px"><span style="font-size:15px;line-height:22px;font-weight:600;color:#fff">สถาบัน</span> <span style="font-size:15px;line-height:22px;color:#C9C2F5">[ชื่อสถาบัน/คณะ]</span></div>
+        <div style="border:1.5px dashed rgba(255,255,255,0.45);border-radius:10px;padding:4px 14px"><span style="font-size:15px;line-height:22px;font-weight:600;color:#fff">อาจารย์ที่ปรึกษา</span> <span style="font-size:15px;line-height:22px;color:#C9C2F5">[ชื่อ]</span></div>
+        <div style="border:1.5px dashed rgba(255,255,255,0.45);border-radius:10px;padding:4px 14px"><span style="font-size:15px;line-height:22px;font-weight:600;color:#fff">ช่องทางติดต่อ</span> <span style="font-size:15px;line-height:22px;color:#C9C2F5">[อีเมล/โทร]</span></div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <div class="ph" style="width:132px;height:132px;background:#fff;color:#5A6685;font-size:14px;line-height:20px;border-color:#7FA2FF;flex:none"><div>QR code</div><div>วางรูป QR</div></div>
+        <div style="width:150px"><div style="font-size:16px;line-height:24px;font-weight:600;color:#fff">สแกนเพื่อลองระบบตัวอย่าง</div><div style="font-size:13px;line-height:20px;color:#E9E6FF;margin-top:4px">smartmart-pos-sage.vercel.app</div></div>
+      </div>
+    </div>
+    <div style="position:absolute;left:40px;bottom:14px;font-size:13px;line-height:20px;color:#C9C2F5">PromptPay เป็นโหมดทดลอง (Sandbox) · Smart BI เป็นกฎ/สถิติ ไม่ใช่ AI · ตัวเลขทดสอบจากการรันบนเครื่องผู้พัฒนา 14 พ.ย. 2569</div>
+  </div>
+</div>
+</body></html>
