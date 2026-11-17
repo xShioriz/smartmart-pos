@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { getCurrentUser, homePathFor } from "@/server/auth/guard";
+import { Button } from "@/components/ui/button";
+import { demoLoginEnabled } from "@/server/services/auth";
+import { demoLoginAction } from "./actions";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
@@ -24,6 +27,12 @@ export default async function LoginPage() {
         </CardHeader>
         <CardContent>
           <LoginForm />
+          {demoLoginEnabled() && (
+            <form action={demoLoginAction} className="mt-4 border-t pt-4">
+              <Button type="submit" variant="outline" size="lg" className="w-full">เข้าสู่โหมดสาธิต (เจ้าของร้าน)</Button>
+              <p className="mt-2 text-center text-sm text-muted-foreground">สำหรับผู้ชมระบบตัวอย่าง ไม่ต้องใส่รหัสผ่าน</p>
+            </form>
+          )}
         </CardContent>
       </Card>
     </main>

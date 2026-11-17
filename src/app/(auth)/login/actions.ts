@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { loginSchema } from "@/lib/validators/auth";
-import { INVALID_LOGIN, attemptLogin } from "@/server/services/auth";
+import { INVALID_LOGIN, attemptLogin, demoLogin } from "@/server/services/auth";
 import { createSession, deleteSession } from "@/server/auth/session";
 import { homePathFor } from "@/server/auth/guard";
 
@@ -23,6 +23,14 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   if (!r.ok) return { error: r.error };
   await createSession(r.user.id);
   redirect(homePathFor(r.user.role));
+}
+
+/** ปุ่ม "เข้าสู่โหมดสาธิต" — ใช้ได้เฉพาะเมื่อตั้ง DEMO_LOGIN_EMAIL (ตรวจฝั่งเซิร์ฟเวอร์ทุกครั้ง ไม่พึ่งการซ่อนปุ่ม) */
+export async function demoLoginAction() {
+  const u = await demoLogin();
+  if (!u) redirect("/login");
+  await createSession(u.id);
+  redirect(homePathFor(u.role));
 }
 
 export async function logoutAction() {

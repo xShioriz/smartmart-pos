@@ -19,6 +19,21 @@ export async function authenticate(email: string, password: string) {
 
 export type LoginOutcome = { ok: true; user: { id: string; role: "ADMIN" | "OWNER" | "CASHIER" } } | { ok: false; error: string; locked: boolean };
 
+/**
+ * โหมดสาธิต: ล็อกอินเป็นผู้ใช้ที่กำหนดใน DEMO_LOGIN_EMAIL โดยไม่ต้องใส่รหัสผ่าน (ไม่ตั้งค่า = ปิด)
+ * ปลอดภัยไว้ก่อน: ยอมเฉพาะผู้ใช้ที่ยังเปิดใช้งานและมีสิทธิ์ OWNER — ตั้งเป็นอีเมลแอดมินพลาดก็ไม่เปิดสิทธิ์แอดมินให้ใครก็ได้
+ */
+export const demoLoginEnabled = () => !!process.env.DEMO_LOGIN_EMAIL?.trim();
+
+export async function demoLogin() {
+  const email = process.env.DEMO_LOGIN_EMAIL?.trim().toLowerCase();
+  if (!email) return null;
+  const user = await db.user.findUnique({ where: { email } });
+  if (!user || !user.isActive || user.role !== "OWNER") return null;
+  await audit(db, { userId: user.id, action: "LOGIN_DEMO", entity: "User", entityId: user.id, after: { email } });
+  return { id: user.id, role: user.role };
+}
+
 export const INVALID_LOGIN = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
 
 /** ล็อกอินพร้อมจำกัดการลองผิดซ้ำ — ถ้าถูกบล็อกจะไม่ตรวจรหัสผ่านเลย (ตอบแบบเดียวกันทั้งอีเมลที่มีและไม่มีในระบบ) */
